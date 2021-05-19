@@ -3,7 +3,7 @@
 
 SECTION .text
 
-; initialize all segment before running code
+; initialize code segment before running code
 jmp 0x07C0:START
 
 START:
