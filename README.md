@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch5/summary/assets/result.png)
+![capture of MINT64OS screen](./Ch5/summary/assets/result.png)
 
 
 This repositry is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
