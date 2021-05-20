@@ -53,4 +53,4 @@ dkms.conf
 
 # OS image file
 Disk.img
-.bin
+*.bin
