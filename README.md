@@ -1,5 +1,8 @@
 # my-operating-system-programming-skills
 
+![capture of MINT64OS screen](Ch5/summary/assets/result.png)
+
+
 This repositry is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
 from just a simple bootloader to the complex GUI desktop environment 64 bits multi-core
 operating system
@@ -79,3 +82,17 @@ operating system
 * Ch04
 
     1. a simple Bootloader that prints a string and execute infinite loop
+
+* Ch05
+
+    1. Bootloader 
+
+        * have stack so it can call functions
+        * have print function in cdecl convention
+        * read OS from floppy disk, load at 0x10000 and execute it
+    
+    2. Virtual OS
+
+        * a simple OS to check if bootloader load OS successfully
+        * print numbers 1024 times to the screen. 1024 is size of sectors that
+        this OS takes
