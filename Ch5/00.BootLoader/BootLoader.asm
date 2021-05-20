@@ -1,3 +1,6 @@
+; macro:
+;  FLOPPY144 : read sectors up to 18 instead of 36
+
 [ORG 0x00]
 [BITS 16]
 
@@ -101,13 +104,21 @@ READDATA:
     mov es, si
 
     ; set sector, head, track numbers to next src_addr
-    ; floppy sector range: 1~19
+    ; floppy sector range: 1~18 in 1.44MB and 1~36 in 2.88MB
     ; floppy head range: 0~1
     ; floppy track(cylinder) range: 0~79
     mov al, byte [SECTORNUMBER]
     add al, 0x01
     mov byte [SECTORNUMBER], al
-    cmp al, 19
+
+    %if FLOPPY == 144
+        cmp al, 19 ; for 1.44MB
+    %elif FLOPPY == 288
+        cmp al, 37 ; for 2.88MB floppy which is default of QEMU
+    %else
+        %error "FLOPPY should be 144 or 288"
+    %endif
+
     jl READDATA
 
     xor byte [HEADNUMBER], 0x01
