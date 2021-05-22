@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "binutils",
         "bootloader",
         "cdecl",
         "clearscreenloop",
@@ -17,6 +18,7 @@
         "imageloadingmessage",
         "lgdt",
         "loadingcompletemessage",
+        "localtime",
         "makefine",
         "messageend",
         "messageloop",
