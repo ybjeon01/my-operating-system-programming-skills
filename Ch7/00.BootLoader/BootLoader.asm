@@ -10,8 +10,11 @@ SECTION .text
 jmp 0x07C0:START
 
 ; env for MINT64OS
-TOTALSECTORCOUNT: dw 1 ; size of MINT64OS image is 1 sectors
-                       ; Ch06 EntryPoint.S size is 1 sector
+; TOTALSECTORCOUNT will be modified by ImageMaker program in 
+; Utility directory.
+; When you read the code, just assume that the number is total number of
+; sectors of overall image except bootloader part
+TOTALSECTORCOUNT: dw 0 
 
 ; code section
 START:
