@@ -57,3 +57,6 @@ Disk.img
 
 # Makefile dependency file
 Dependency.dep
+
+# Utility programs
+*/04.Utility/01.ImageMaker/ImageMaker
