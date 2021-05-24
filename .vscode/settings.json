@@ -36,6 +36,7 @@
         "lgdt",
         "loadingcompletemessage",
         "localtime",
+        "lseek",
         "makefine",
         "messageend",
         "messageloop",
