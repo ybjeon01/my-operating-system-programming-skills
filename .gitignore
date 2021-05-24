@@ -54,3 +54,6 @@ dkms.conf
 # OS image file
 Disk.img
 *.bin
+
+# Makefile dependency file
+Dependency.dep
