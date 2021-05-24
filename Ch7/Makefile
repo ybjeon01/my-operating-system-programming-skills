@@ -1,10 +1,12 @@
-.PHONY: all clean run
-
-all: BootLoader Kernel32 Disk.img
-
 # options:
 #  FLOPPY: decide where the os image will reside between 1.44 and 2.88 floppies
 #    possible values: [144, 288]
+
+
+.PHONY: all clean run
+
+all: Utility BootLoader Kernel32 Disk.img
+
 BootLoader:
 	@echo
 	@echo ============== Build Boot Loader ==============
@@ -25,12 +27,23 @@ Kernel32:
 	@echo ============== Build Complete ==============
 	@echo
 
+Utility:
+	@echo
+	@echo ============== Build Utility programs ==============
+	@echo 
+
+	make -C 04.Utility
+
+	@echo ============== Build Complete ==============
+	@echo
+
+
 Disk.img: 00.BootLoader/BootLoader.bin 01.Kernel32/Kernel32.bin
 	@echo
 	@echo ============== Disk Image Build Start ==============
 	@echo
 	
-	cat  $^ > Disk.img
+	04.Utility/01.ImageMaker/ImageMaker $^
 	
 	@echo
 	@echo ============== All Build Complete ==============
@@ -39,6 +52,7 @@ Disk.img: 00.BootLoader/BootLoader.bin 01.Kernel32/Kernel32.bin
 clean:
 	make -C 00.BootLoader clean
 	make -C 01.Kernel32 clean
+	make -C 04.Utility clean
 	rm -f Disk.img
 	
 run:
