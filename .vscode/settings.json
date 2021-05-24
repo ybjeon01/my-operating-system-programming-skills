@@ -17,6 +17,7 @@
         "diskerrormessage",
         "dword",
         "elif",
+        "endmessageloop",
         "endrep",
         "errno",
         "fastcall",
