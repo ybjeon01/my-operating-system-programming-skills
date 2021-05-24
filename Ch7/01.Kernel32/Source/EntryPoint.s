@@ -50,7 +50,7 @@ PROTECTEDMODE:
     call PRINTMESSAGE
     add esp, 12 ; 4 bytes (Protected Mode) * 3
 
-    jmp $
+    jmp dword 0x08:0x10200
 
 ; function signature in C: PrintMessage(iX, iY, pcString)
 ; follow cdecl calling convention
