@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch6/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch7/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -81,9 +81,28 @@ operating system
 
 * Ch04
 
-    1. a simple Bootloader that prints a string and execute infinite loop
+    * describe how to make bootloader that prints a string and execute infinite
+    loop
+
+    * summaries
+    
+        * [4-1.md](Ch4/summary/4-1.md)
+        * [4-2.md](Ch4/summary/4-2.md)
+        * [4-3.md](Ch4/summary/4-3.md)
+
+    * [result image](Ch4/summary/assets/result.PNG)
 
 * Ch05
+
+    * summaries
+    
+        * [5-1.md](Ch5/summary/5-1.md)
+        * [5-2.md](Ch5/summary/5-2.md)
+        * [5-3.md](Ch5/summary/5-3.md)
+        * [5-4.md](Ch5/summary/5-4.md)
+        * [5-5.md](Ch5/summary/5-5.md)
+
+    * [result image](Ch5/summary/assets/result.PNG)
 
     1. Bootloader 
 
@@ -99,7 +118,46 @@ operating system
 
 * Ch06
 
+    * summaries
+    
+        * [6-1.md](Ch6/summary/6-1.md)
+        * [6-2.md](Ch6/summary/6-2.md)
+        * [6-3.md](Ch6/summary/6-3.md)
+
+    * [result image](Ch6/summary/assets/result.PNG)
+
     1. EntryPoint.s
 
         * a file that contains code switching from Real mode to Protected Mode
         * print success menage after successfully switching to Protected Mode
+
+* Ch07
+
+    * describe how to concatenate EntryPoint.s and code written in C
+
+        * Memory Layout conflict
+        * what is Linker and how to use Linker script
+
+    * describe modified Makefile that automatically add code dependencies,
+    so you can write multiple c codes without adding dependencies to Makefile
+    manually
+
+    * summaries
+
+        * [7-1.md](Ch7/summary/7-1.md)
+        * [7-2.md](Ch7/summary/7-2.md)
+        * [7-3.md](Ch7/summary/7-3.md)
+        * [7-4.md](Ch7/summary/7-4.md)
+
+    * [result image](Ch7/summary/assets/result.PNG)
+
+    1. 01.Kernel32/Main.c
+
+        * First code written in C
+
+    2. ImageMaker.c
+
+        * utility program that concatenates Bootloader.bin and other binary.
+        * this program automatically modifies TOTALSECTORCOUNT part of
+        Bootloader.bin, so you can add multiple c code without modifying
+        Bootloader.asm manually
