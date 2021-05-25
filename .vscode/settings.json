@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "a",
         "assemblyobjectfiles",
         "assemblysourcefiles",
         "binutils",
@@ -7,6 +8,7 @@
         "bytesofsector",
         "cdecl",
         "centrypointobjectfile",
+        "cflag",
         "chractor",
         "clearscreenloop",
         "cobjectfiles",
@@ -24,6 +26,8 @@
         "fcntl",
         "ffreestanding",
         "fprintf",
+        "gateerror",
+        "gatesuccess",
         "gdtend",
         "gdtr",
         "handlediskerror",
@@ -39,6 +43,7 @@
         "localtime",
         "lseek",
         "makefine",
+        "mbyte",
         "messageend",
         "messageloop",
         "mkdir",
@@ -78,6 +83,7 @@
     ],
     "files.associations": {
         "stat.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "types.h": "c"
     }
 }
