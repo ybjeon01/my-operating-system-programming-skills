@@ -24,24 +24,23 @@ START:
         out 0x92, al
 
     .A20GATESUCCESS:
+        cli ; ignore interrupt until interrupt handler is set
 
-    cli ; ignore interrupt until interrupt handler is set
+        lgdt [GDTR]
+        
+            ; PG=0, CD=1, NW=0, AM=0, WP=0, NE=0, ET=1, EM=0, MP=1, PE=1
+            ; CD means cache disable
+            ; PE is protection enable    
+            ; EM, ET, MP, PE are FPU-related fields and they are set
+            ; although their feature is not used in IA-32 mode. they will
+            ; be explained in detail later. Don't worry about the fields now
+            mov eax, 0x4000003B
+            mov cr0, eax
 
-    lgdt [GDTR]
-    
-        ; PG=0, CD=1, NW=0, AM=0, WP=0, NE=0, ET=1, EM=0, MP=1, PE=1
-        ; CD means cache disable
-        ; PE is protection enable    
-        ; EM, ET, MP, PE are FPU-related fields and they are set
-        ; although their feature is not used in IA-32 mode. they will
-        ; be explained in detail later. Don't worry about the fields now
-        mov eax, 0x4000003B
-        mov cr0, eax
-
-        ; 0x08 is offset to the code segment descriptor from GDT
-        ; PROTECTEDMODE - $$ + 0x10000 is offset to the code from
-        ; segment
-        jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000)
+            ; 0x08 is offset to the code segment descriptor from GDT
+            ; PROTECTEDMODE - $$ + 0x10000 is offset to the code from
+            ; segment
+            jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000)
 
 [BITS 32]
 PROTECTEDMODE:
