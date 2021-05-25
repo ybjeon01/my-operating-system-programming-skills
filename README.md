@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch7/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch8/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -161,3 +161,23 @@ operating system
         * this program automatically modifies TOTALSECTORCOUNT part of
         Bootloader.bin, so you can add multiple c code without modifying
         Bootloader.asm manually
+
+* Ch08
+
+    * describe what is A20 Gate and how to activate it
+    
+    * summaries
+
+        * [8-1.md](Ch8/summary/8-1.md)
+        * [8-2.md](Ch8/summary/8-2.md)
+        * [8-3.md](Ch8/summary/8-3.md)
+
+    * [result image](Ch8/summary/assets/result.PNG)
+
+    1 01.Kernel32/EntryPoint.s
+
+        * has code to activate A20 Gate
+
+    2. 01.Kernel32/Main.c
+
+        * has code to check if system has 64MB memory
