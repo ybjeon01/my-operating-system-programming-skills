@@ -46,7 +46,7 @@ kReadCPUID:
 
     ret
 
-; switch protected mode to long mode
+; switch protected mode to long mode and run code at x200000 (2 MiB)
 ; this function modifies CR0, CR3, CR4, and IA32_EFER so cpu switches to IA-32e
 ; with cache and paging enabled. The Cache is write-through cache mode, and
 ; other paging-specific features are disabled.
