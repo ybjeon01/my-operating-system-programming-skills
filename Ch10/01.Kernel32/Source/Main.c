@@ -1,5 +1,7 @@
 #include "Types.h"
 #include "Page.h"
+#include "ModeSwitch.h"
+
 
 void kPrintString(int iX, int iY, const char *pcString);
 BOOL kInitializeKernel64Area(void);
@@ -42,7 +44,43 @@ void Main(void) {
     kInitializePageTables();
     kPrintString(45, 6, "Pass");
 
-    // stop processing
+
+    // check if CPU supports long mode by reading CPU info
+    DWORD dwEAX, dwEBX, dwECX, dwEDX;
+    char vcVendorString[13] = {0,};
+    kReadCPUID(0x00, &dwEAX, &dwEBX, &dwECX, &dwEDX);
+    // name of manufacturer is stored at ebx, edx, ecx in order
+    *(DWORD *)vcVendorString = dwEBX;
+    *((DWORD *)vcVendorString + 1) = dwEDX;
+    *((DWORD *)vcVendorString + 2) = dwECX;
+
+    kPrintString(0, 7, "Processor Vendor String"
+    		           ".....................[            ]");
+    kPrintString(45, 7, vcVendorString);
+
+    // check if CPU supports 64 bit mode
+    kReadCPUID(0x80000001, &dwEAX, &dwEBX, &dwECX, &dwEDX);
+
+    kPrintString(0, 8, "64bit Mode Support Check....................[    ]");
+    if (dwEDX & (1 << 29)) {
+    	kPrintString(45, 8, "Pass");
+    }
+    else {
+    	kPrintString(45, 8, "Fail");
+    	kPrintString(0, 9, "This processor does not support 64 bit mode~!!");
+        // stop processing
+    	while (1);
+    }
+
+
+    // switch to long mode. 
+    // This function execute code at 0x200000(2MB) Because of internal
+    // implementation, current stack is not counted on anymore. 64 bit kernel
+    // will not be able to go back to parent function calling it.
+    kPrintString(0, 9, "Switch To IA-32e Mode");
+    kSwitchAndExecute64bitKernel();
+
+    // this code will never be executed
 	while (1);
 }
 
