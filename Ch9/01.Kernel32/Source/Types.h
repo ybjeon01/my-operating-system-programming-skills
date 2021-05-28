@@ -1,5 +1,5 @@
 #ifndef __Types_H__
-#define _Types_H__
+#define __Types_H__
 
 #define BYTE unsigned char
 #define WORD unsigned short
