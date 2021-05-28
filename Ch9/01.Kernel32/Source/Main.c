@@ -1,4 +1,5 @@
 #include "Types.h"
+#include "Page.h"
 
 void kPrintString(int iX, int iY, const char *pcString);
 BOOL kInitializeKernel64Area(void);
@@ -34,6 +35,14 @@ void Main(void) {
     }
     kPrintString(45, 5, "Pass");
 
+
+    // initialize page table tree for IA-32e mode kernel
+    // area: 1MB ~ (1MB + 264KB)
+    kPrintString(0, 6, "IA-32e Page Tables initialize...............[    ]");
+    kInitializePageTables();
+    kPrintString(45, 6, "Pass");
+
+    // stop processing
 	while (1);
 }
 
