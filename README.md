@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch8/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch9/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -155,7 +155,7 @@ operating system
 
         * First code written in C
 
-    2. ImageMaker.c
+    2. 04./Utility/01.ImageMaker/ImageMaker.c
 
         * utility program that concatenates Bootloader.bin and other binary.
         * this program automatically modifies TOTALSECTORCOUNT part of
@@ -174,10 +174,27 @@ operating system
 
     * [result image](Ch8/summary/assets/result.PNG)
 
-    1 01.Kernel32/EntryPoint.s
+    1. 01.Kernel32/EntryPoint.s
 
         * has code to activate A20 Gate
 
     2. 01.Kernel32/Main.c
 
         * has code to check if system has 64MB memory
+
+* Ch09
+
+    * describe paging, a memory management feature
+    * explains how to prepare to use the feature
+    
+    * summaries
+
+        * [9-1.md](Ch9/summary/9-1.md)
+        * [9-2.md](Ch9/summary/9-2.md)
+        * [9-3.md](Ch9/summary/9-3.md)
+
+    * [result image](Ch9/summary/assets/result.PNG)
+
+    1. 01.Kernel32/[Page.h, Page.c]
+
+        * has code to initialize IA-32e mode page tree data structure
