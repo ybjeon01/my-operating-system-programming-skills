@@ -37,15 +37,15 @@ START:
             mov eax, 0x4000003B
             mov cr0, eax
 
-            ; 0x08 is offset to the code segment descriptor from GDT
-            ; PROTECTEDMODE - $$ + 0x10000 is offset to the code from
+            ; 0x18 is offset to the protected mode's code segment descriptor
+            ; from GDT PROTECTEDMODE - $$ + 0x10000 is offset to the code from
             ; segment
-            jmp dword 0x08: (PROTECTEDMODE - $$ + 0x10000)
+            jmp dword 0x18: (PROTECTEDMODE - $$ + 0x10000)
 
 [BITS 32]
 PROTECTEDMODE:
     ; set code and data segment
-    mov ax, 0x10 ; 0x10 = offset to data segment descriptor from gdt
+    mov ax, 0x20 ; 0x20 = offset to IA-32 mode's data segment descriptor
     mov ds, ax
     mov es, ax ; it is not required to set es, fs, and gs
     mov fs, ax
@@ -59,14 +59,15 @@ PROTECTEDMODE:
 
     ;; print message
     
-    ; prinMessage(success_message, 2, 0)
+    ; printMessage(success_message, 2, 0)
     push (SWITCHSUCCESSMESSAGE - $$ + 0x10000)
     push 2
     push 0
     call PRINTMESSAGE
     add esp, 12 ; 4 bytes (Protected Mode) * 3
 
-    jmp dword 0x08:0x10200
+    ; 0x18 is offset to IA-32's code descriptor
+    jmp dword 0x18:0x10200
 
 ; function signature in C: PrintMessage(iX, iY, pcString)
 ; follow cdecl calling convention
@@ -146,31 +147,57 @@ GDT:
         db 0x00
         db 0x00
 
-; descriptor for CS
-CODEDESCRIPTOR:
-    ; BASE: 0x00000000
-    ; LIMIT: 0xFFFFF
-    ; P=1, DPL=0, Code Segment, Execute/Read
-    ; G=1, D=1, L=0
-    dw 0xFFFF ; Limit (16:0]
-    dw 0x0000 ; Base (32:16)
-    db 0x00   ; Base (40:32]
-    db 0x9A   ; P/DPL/S/Type (48:40]
-    db 0xCF   ; G/D/L/LIMIT (56:48]
-    db 0x00   ; BASE (64:56]
+    ; IA-32e mode code descriptor for kernel
+    IA_32eCODEDESCRIPTOR:
+        ; BASE: 0x00000000
+        ; LIMIT: 0xFFFFF
+        ; P=1, DPL=0, Code Segment, Execute/Read
+        ; G=1, D=0, L=1
+        dw 0xFFFF ; Limit (16:0]
+        dw 0x0000 ; Base (32:16)
+        db 0x00   ; Base (40:32]
+        db 0x9A   ; P/DPL/S/Type (48:40]
+        db 0xAF   ; G/D/L/LIMIT (56:48]
+        db 0x00   ; BASE (64:56]
 
-; descriptor for DS, SS
-DATADESCRIPTOR:
-    ; BASE: 0x00000000
-    ; LIMIT: 0xFFFFF
-    ; P=1, DPL=0, Data Segment, Read/Write
-    ; G=1, B=1, L=0
-    dw 0xFFFF ; Limit (16:0]
-    dw 0x0000 ; Base (32:16)
-    db 0x00   ; Base (40:32]
-    db 0x92   ; P/DPL/S/Type (48:40]
-    db 0xCF   ; G/D/L/LIMIT (56:48]
-    db 0x00   ; BASE (64:56]
+    ; IA-32e mode data and stack descriptor for kernel
+    IA_32eDATADESCRIPTOR:
+        ; BASE: 0x00000000
+        ; LIMIT: 0xFFFFF
+        ; P=1, DPL=0, Data Segment, Read/Write
+        ; G=1, B=0, L=1
+        dw 0xFFFF ; Limit (16:0]
+        dw 0x0000 ; Base (32:16)
+        db 0x00   ; Base (40:32]
+        db 0x92   ; P/DPL/S/Type (48:40]
+        db 0xAF   ; G/D/L/LIMIT (56:48]
+        db 0x00   ; BASE (64:56]
+
+    ; protected mode's code descriptor (CS)
+    CODEDESCRIPTOR:
+        ; BASE: 0x00000000
+        ; LIMIT: 0xFFFFF
+        ; P=1, DPL=0, Code Segment, Execute/Read
+        ; G=1, D=1, L=0
+        dw 0xFFFF ; Limit (16:0]
+        dw 0x0000 ; Base (32:16)
+        db 0x00   ; Base (40:32]
+        db 0x9A   ; P/DPL/S/Type (48:40]
+        db 0xCF   ; G/D/L/LIMIT (56:48]
+        db 0x00   ; BASE (64:56]
+
+    ; protected mode's data and stack descriptor (DS, SS)
+    DATADESCRIPTOR:
+        ; BASE: 0x00000000
+        ; LIMIT: 0xFFFFF
+        ; P=1, DPL=0, Data Segment, Read/Write
+        ; G=1, B=1, L=0
+        dw 0xFFFF ; Limit (16:0]
+        dw 0x0000 ; Base (32:16)
+        db 0x00   ; Base (40:32]
+        db 0x92   ; P/DPL/S/Type (48:40]
+        db 0xCF   ; G/D/L/LIMIT (56:48]
+        db 0x00   ; BASE (64:56]
 GDTEND:
 
 ;; Collection of data
