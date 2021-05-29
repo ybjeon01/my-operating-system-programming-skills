@@ -38,47 +38,59 @@ operating system
 
 ## Ubuntu
 
-    # go to a chapter directory where you want to compile
-    
-    # compile
-    make all
+```Bash
+# go to a chapter directory where you want to compile
 
-    # run operating system in emulator
-    make run
+# compile
+make all
 
-    # clean
-    make clean
-    
+# run operating system in emulator
+make run
+
+# clean
+make clean
+```
+
 ## Docker + Windows
 
-    # Inside Docker container
+```Bash
+# Inside Docker container
 
-    # go to a chapter directory where you want to compile
-    
-    # compile
-    make all
+# go to a chapter directory where you want to compile
 
-    # open Powershell whose current directory is this repository directory
-    qemu-system-x86_64.exe -m 64 -fda .\Disk.img -rtc base=localtime -M pc
+# compile
+make all
 
+# open Powershell whose current directory is this repository directory
+qemu-system-x86_64.exe -m 64 -fda .\Disk.img -rtc base=localtime -M pc
+```
 ## In Real PC
 
-    # Before running, it is necessary to install the OS to floppy disk, so
-    # go to a chapter that you like
+```Bash
+# Before running, it is necessary to install the OS to floppy disk, so
+# go to a chapter that you like
 
-    # By default, image is made to work under 2.88MB floppy disk. Let it work
-    # under 1.44MB floppy disk 
-    make FLOPPY=144 all
+# By default, image is made to work under 2.88MB floppy disk. Let it work
+# under 1.44MB floppy disk 
+make FLOPPY=144 all
 
-    # If you are running Windows, download dd command for Windows and copy OS
-    # Image to a directory where dd command is
+# If you are running Windows, download dd command for Windows and copy OS
+# Image to a directory where dd command is
 
-    # For Linux (floppy disk dev name can be different. But usually is it fd0)
-    sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
+# For Linux (floppy disk dev name can be different. But usually is it fd0)
+sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
-    # For Windows
-    .\dd.exe of="\\.\a:" if=Disk.img bs=1440k count=1
+# For Windows
+.\dd.exe of="\\.\a:" if=Disk.img bs=1440k count=1
 
+# Go to CMOS (BIOS setting)
+# If your BIOS is using UEFI, change it to legacy first and then
+# change your bootloader so BIOS reads MBR from floppy disk first
+
+# In my case, I have a Acer Laptop made in 2018. Its BIOS allows to
+# emulate USB Floppy Drive as old Floppy Drive, so I changed UEFI to legacy
+# mode, connected USB-FDD, and tested my image
+```
 
 # Directory Structure
 
