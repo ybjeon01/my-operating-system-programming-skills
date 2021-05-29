@@ -61,6 +61,23 @@ operating system
     # open Powershell whose current directory is this repository directory
     qemu-system-x86_64.exe -m 64 -fda .\Disk.img -rtc base=localtime -M pc
 
+## In Real PC
+
+    # Before running, it is necessary to install the OS to floppy disk, so
+    # go to a chapter that you like
+
+    # By default, image is made to work under 2.88MB floppy disk. Let it work
+    # under 1.44MB floppy disk 
+    make FLOPPY=144 all
+
+    # If you are running Windows, download dd command for Windows and copy OS
+    # Image to a directory where dd command is
+
+    # For Linux (floppy disk dev name can be different. But usually is it fd0)
+    sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
+
+    # For Windows
+    .\dd.exe of="\\.\a:" if=Disk.img bs=1440k count=1
 
 
 # Directory Structure
