@@ -11,6 +11,7 @@
         "cflag",
         "chractor",
         "clearscreenloop",
+        "cmos",
         "cobjectfiles",
         "codedescriptor",
         "cpuid",
@@ -20,6 +21,7 @@
         "defaultsize",
         "diskerrormessage",
         "dword",
+        "e",
         "efer",
         "elif",
         "endmessageloop",
@@ -99,6 +101,7 @@
         "totalsectorcount",
         "tracknumber",
         "trunc",
+        "uefi",
         "unistd",
         "wrmsr"
     ],
