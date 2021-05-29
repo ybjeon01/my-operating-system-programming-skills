@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch9/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch10/summary/assets/result2.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -92,6 +92,19 @@ operating system
 
     * [result image](Ch4/summary/assets/result.PNG)
 
+    1. 00.Bootloader/Bootloader.asm
+
+        * print a message by using BIOS service
+
+    2. 00.Bootloader/Makefile
+
+        * compile Bootloader.asm to a binary
+
+    3. Makefile in root directory
+
+        * copy the Bootloader.bin in 00.Bootloader directory into root directory
+        and change the name to Disk.img
+
 * Ch05
 
     * summaries
@@ -104,19 +117,41 @@ operating system
 
     * [result image](Ch5/summary/assets/result.PNG)
 
-    1. Bootloader 
+    1. 00.Bootloader/Bootloader.asm
 
-        * have stack so it can call functions
-        * have print function in cdecl convention
-        * read OS from floppy disk, load at 0x10000 and execute it
-    
-    2. Virtual OS
+        * has stack so it can call functions
+        * has print function in cdecl convention
+        * reads OS from floppy disk, load at 0x10000 and execute it
+        * has preprocessor directives so Bootloader can copy OS
+        from 1.44 or 2.88 floppy disk 
+
+    2. 00.Bootloader/Makefile
+
+        * accept Floppy option from root Makefile and pass it to assembly compiler
+
+    2. 01.Kernel32/VirtualOS.bin
 
         * a simple OS to check if bootloader load OS successfully
         * print numbers 1024 times to the screen. 1024 is size of sectors that
         this OS takes
 
+    3. 01.Kernel32/Makefile
+
+        * compile VirtualOS.asm to a binary file
+
+    4. Makefile in root directory
+
+        * concatenate Bootloader.bin and VirtualOS.bin
+        * add option Floppy so you can test the image file with real computer
+
+            1. Floppy=144 means the created image is for 1.44MB floppy disk
+            2. Floppy=288 means the created image is for 2.88MB floppy disk (default)
+
 * Ch06
+    * describe how to switch from real mode to protected mode 
+    * describe segment descriptor and GDT(global descriptor table)
+    which is required before switching
+    * describe some of features that CR0 controls: cache and FPU 
 
     * summaries
     
@@ -126,10 +161,15 @@ operating system
 
     * [result image](Ch6/summary/assets/result.PNG)
 
-    1. EntryPoint.s
+    1. 01.Kernel32/Source/EntryPoint.s
 
         * a file that contains code switching from Real mode to Protected Mode
         * print success menage after successfully switching to Protected Mode
+
+    2. Makefile in root directory
+
+        * remove VirtualOS part
+        * concatenate Bootloader.bin and EntryPoint.bin when making OS image file
 
 * Ch07
 
@@ -151,13 +191,27 @@ operating system
 
     * [result image](Ch7/summary/assets/result.PNG)
 
-    1. 01.Kernel32/Main.c
+    1. 00.Bootloader/Bootloader.asm
+
+        * TOTALSECTORCOUNT constant, so ImageMaker can modify the value, and bootloader
+        can successfully load the whole os image to memory
+
+    2. 01.Kernel32/Source/EntryPoint.s
+
+        *  jump to where C code is: 0x10200
+
+    3. 01.Kernel32/Source/Main.c
 
         * First code written in C
 
-    2. 04./Utility/01.ImageMaker/ImageMaker.c
+    4. 01.Kernel32/[Makefile, binary_i386.x]
 
-        * utility program that concatenates Bootloader.bin and other binary.
+        * Makefile file and linker script that compiles code to 32 bit kernel
+
+    5. 04./Utility/01.ImageMaker/ImageMaker.c
+
+        * utility program that concatenates Bootloader.bin and 32 bit kernel
+        binary.
         * this program automatically modifies TOTALSECTORCOUNT part of
         Bootloader.bin, so you can add multiple c code without modifying
         Bootloader.asm manually
@@ -198,3 +252,49 @@ operating system
     1. 01.Kernel32/[Page.h, Page.c]
 
         * has code to initialize IA-32e mode page tree data structure
+
+* Ch10
+
+    * describe paging, a memory management feature
+    * explains how to prepare to use the feature
+    
+    * summaries
+
+        * [10-1.md](Ch10/summary/10-1.md)
+        * [10-2.md](Ch10/summary/10-2.md)
+        * [10-3.md](Ch10/summary/10-3.md)
+        * [10-4.md](Ch10/summary/10-4.md)
+        * [10-5.md](Ch10/summary/10-5.md)
+        * [10-6.md](Ch10/summary/10-6.md)
+        * [10-7.md](Ch10/summary/10-7.md)
+
+    * [early result image](Ch10/summary/assets/result1.PNG)
+    * [result image](Ch10/summary/assets/result2.PNG)
+
+    1. 01.Kernel32/Source/[ModeSwitch.asm, ModeSwitch.h]
+
+        * reads cpuid and check if current CPU supports long mode
+        * mount all prepared data structures to registers and switch
+        long mode on and jump to code at 0x200000(2MB)
+
+    2. 00.Bootloader/Bootloader.asm
+
+        * a new constant, KERNEL32SECTORCOUNT which helps 32 bit Kernel
+        to copy 64 bit Kernel to memory at 0x200000
+
+    3. 01.Kernel32/Source/Main.c
+
+        * copy Kernel64 binary to 0x200000 and call function in ModeSwitch.asm
+
+    4. 02.Kernel64/Source/[EntryPoint.s, Main.c]
+
+        * first code written in C for long mode
+
+    5. 02.Kernel64/Makefile and 01.Kernel64/binary_amd64
+
+        * Makefile file and linker script that compiles code to 64 bit kernel
+
+    6. 04./Utility/01.ImageMaker/ImageMaker.c
+
+        * this program is modified to add 64 bit binary to image file
+        * modify KERNEL32SECTORCOUNT in Bootloader.asm
