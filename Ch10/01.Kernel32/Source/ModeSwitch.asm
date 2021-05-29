@@ -68,8 +68,9 @@ kSwitchAndExecute64bitKernel:
     or eax, 0x0100		; set Long Mode Enable (LME) on for IA-32e mode
     wrmsr               ; switch long mode on
 
-    ; currently using code segment descriptor for protected mode, so below
-    ; code is running under compatibility mode without paging feature 
+    ; currently CPU uses protected mode's code segment descriptor, so below
+    ; code is running under compatibility mode without paging feature.
+    ; At the moment that CR0 is set, paging feature is activated.
     ; set NW bit (bit 29) = 0, CD bit (bit 30) = 0, PG bit (bit 31) = 1
     ; so activates cache and page capability
     mov eax, cr0
@@ -78,6 +79,6 @@ kSwitchAndExecute64bitKernel:
     mov cr0, eax        ; switch paging feature on
 
     jmp 0x08:0x200000	; set CS to IA-32e's code descriptor and jump to
-    						; 0x200000 (2 MiB) where 64 bit code exists
+    					; 0x200000 (2 MiB) where 64 bit code exists
 
     jmp $					; this code never be run
