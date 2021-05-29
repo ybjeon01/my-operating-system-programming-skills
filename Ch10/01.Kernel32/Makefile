@@ -69,4 +69,4 @@ Kernel32_C.internal.bin: $(CENTRYPOINTOBJECTFILE) $(COBJECTFILES) $(ASSEMBLYOBJE
 
 clean:
 	rm -f *.bin
-	rm -f $(OBJECTDIRECTORY)/*.*
+	rm -rf $(OBJECTDIRECTORY)
