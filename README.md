@@ -85,7 +85,7 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
 # Go to CMOS (BIOS setting)
 # If your BIOS is using UEFI, change it to legacy first and then
-# change your bootloader so BIOS reads MBR from floppy disk first
+# change your bootloader order so BIOS reads MBR from floppy disk first
 
 # In my case, I have a Acer Laptop made in 2018. Its BIOS allows to
 # emulate USB Floppy Drive as old Floppy Drive, so I changed UEFI to legacy
