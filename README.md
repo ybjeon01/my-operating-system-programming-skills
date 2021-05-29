@@ -86,11 +86,11 @@ operating system
 
     * summaries
     
-        * [4-1.md](Ch4/summary/4-1.md)
-        * [4-2.md](Ch4/summary/4-2.md)
-        * [4-3.md](Ch4/summary/4-3.md)
+        * [4-1.md](Ch04/summary/4-1.md)
+        * [4-2.md](Ch04/summary/4-2.md)
+        * [4-3.md](Ch04/summary/4-3.md)
 
-    * [result image](Ch4/summary/assets/result.PNG)
+    * [result image](Ch04/summary/assets/result.PNG)
 
     1. 00.Bootloader/Bootloader.asm
 
@@ -109,13 +109,13 @@ operating system
 
     * summaries
     
-        * [5-1.md](Ch5/summary/5-1.md)
-        * [5-2.md](Ch5/summary/5-2.md)
-        * [5-3.md](Ch5/summary/5-3.md)
-        * [5-4.md](Ch5/summary/5-4.md)
-        * [5-5.md](Ch5/summary/5-5.md)
+        * [5-1.md](Ch05/summary/5-1.md)
+        * [5-2.md](Ch05/summary/5-2.md)
+        * [5-3.md](Ch05/summary/5-3.md)
+        * [5-4.md](Ch05/summary/5-4.md)
+        * [5-5.md](Ch05/summary/5-5.md)
 
-    * [result image](Ch5/summary/assets/result.PNG)
+    * [result image](Ch05/summary/assets/result.PNG)
 
     1. 00.Bootloader/Bootloader.asm
 
@@ -155,11 +155,11 @@ operating system
 
     * summaries
     
-        * [6-1.md](Ch6/summary/6-1.md)
-        * [6-2.md](Ch6/summary/6-2.md)
-        * [6-3.md](Ch6/summary/6-3.md)
+        * [6-1.md](Ch06/summary/6-1.md)
+        * [6-2.md](Ch06/summary/6-2.md)
+        * [6-3.md](Ch06/summary/6-3.md)
 
-    * [result image](Ch6/summary/assets/result.PNG)
+    * [result image](Ch06/summary/assets/result.PNG)
 
     1. 01.Kernel32/Source/EntryPoint.s
 
@@ -184,12 +184,12 @@ operating system
 
     * summaries
 
-        * [7-1.md](Ch7/summary/7-1.md)
-        * [7-2.md](Ch7/summary/7-2.md)
-        * [7-3.md](Ch7/summary/7-3.md)
-        * [7-4.md](Ch7/summary/7-4.md)
+        * [7-1.md](Ch07/summary/7-1.md)
+        * [7-2.md](Ch07/summary/7-2.md)
+        * [7-3.md](Ch07/summary/7-3.md)
+        * [7-4.md](Ch07/summary/7-4.md)
 
-    * [result image](Ch7/summary/assets/result.PNG)
+    * [result image](Ch07/summary/assets/result.PNG)
 
     1. 00.Bootloader/Bootloader.asm
 
@@ -222,11 +222,11 @@ operating system
     
     * summaries
 
-        * [8-1.md](Ch8/summary/8-1.md)
-        * [8-2.md](Ch8/summary/8-2.md)
-        * [8-3.md](Ch8/summary/8-3.md)
+        * [8-1.md](Ch08/summary/8-1.md)
+        * [8-2.md](Ch08/summary/8-2.md)
+        * [8-3.md](Ch08/summary/8-3.md)
 
-    * [result image](Ch8/summary/assets/result.PNG)
+    * [result image](Ch08/summary/assets/result.PNG)
 
     1. 01.Kernel32/EntryPoint.s
 
@@ -243,11 +243,11 @@ operating system
     
     * summaries
 
-        * [9-1.md](Ch9/summary/9-1.md)
-        * [9-2.md](Ch9/summary/9-2.md)
-        * [9-3.md](Ch9/summary/9-3.md)
+        * [9-1.md](Ch09/summary/9-1.md)
+        * [9-2.md](Ch09/summary/9-2.md)
+        * [9-3.md](Ch09/summary/9-3.md)
 
-    * [result image](Ch9/summary/assets/result.PNG)
+    * [result image](Ch09/summary/assets/result.PNG)
 
     1. 01.Kernel32/[Page.h, Page.c]
 
