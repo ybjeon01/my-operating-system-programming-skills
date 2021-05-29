@@ -1,7 +1,8 @@
-/* ImageMaker program concatenate Bootloader.bin and Kernel32.bin to make
- * Disk.img in a way that you do not have to change TOTALSECTORCOUNT part
- * of BootLoader.asm manually. Also, This program aligns Bootloader.bin and
- * Kernel32.bin to multiply of 512 so the image works on QEMU without problem.
+/* ImageMaker program concatenate Bootloader.bin. Kernel32.bin, and
+ * Kernel64.bin to make Disk.img in a way that you do not have to change
+ * TOTALSECTORCOUNT and KERNEL32SECTORCOUNT part of BootLoader.asm manually.
+ * Also, This program aligns Bootloader.bin and Kernel32.bin into multiply
+ * of 512 so the image works on QEMU without problem.
  * Old QEMU fails to load floppy image that is not multiply of 512.
  * The reason that I made this program is that I do not want to change
  * TOTALSECTORCOUNT in BootLoader.asm manually every time I add more C code.
@@ -19,7 +20,11 @@
 #define BYTESOFSECTOR 512
 
 int AdjustInSectorSize(int iFD, int iSourceSize);
-void WriteKernelInformation(int iTargetFd, int iKernelSectorCount);
+void WriteKernelInformation(
+    int iTargetFd,
+    int iTotalKernelSectorCount,
+    int iKernel32SectorCount
+);
 int ConcatenateFile(int iSourceFd, int iTargetFd);
 
 int main(int argc, char* argv[]) {
@@ -27,10 +32,14 @@ int main(int argc, char* argv[]) {
     int iTargetFd;
     int iBootLoaderSize;
     int iKernel32SectorCount;
+    int iKernel64SectorCount;
     int iSourceSize;
 
-    if (argc < 3) {
-    	fprintf(stderr, "[ERROR] ImageMaker BootLoader.bin Kernel32.bin\n");
+    if (argc < 4) {
+    	fprintf(
+            stderr,
+            "[ERROR] ImageMaker BootLoader.bin Kernel32.bin Kernel64.bin\n"
+        );
     	exit(-1);
     }
 
@@ -80,13 +89,40 @@ int main(int argc, char* argv[]) {
     // (size of Kernel32.bin + padding)
     iKernel32SectorCount = AdjustInSectorSize(iTargetFd, iSourceSize);
     printf("[INFO] %s size = [%d] and sector count = [%d]\n",
-    		argv[1], iSourceSize, iKernel32SectorCount);
+    		argv[2], iSourceSize, iKernel32SectorCount);
 
 
     // Section 3
+    // add Kernel64.bin to Disk.img
+
+    // copy Kernel64.bin to Disk.img
+    // iSourceSize is size of Kernel64.bin
+    if ((iSourceFd = open(argv[3], O_RDONLY)) == -1) {
+    	fprintf(stderr, "[ERROR] %s open fail\n", argv[3]);
+    	exit(-1);
+    }
+
+    // copy Kernel64.bin to Disk.img
+    // ISourceSize is size of Kernel64.bin
+    iSourceSize = ConcatenateFile(iSourceFd, iTargetFd);
+    close(iSourceFd);
+
+    // add padding
+    // iKernel64SectorCount is number of sectors of
+    // (size of Kernel64.bin + padding)
+    iKernel64SectorCount = AdjustInSectorSize(iTargetFd, iSourceSize);
+    printf("[INFO] %s size = [%d] and sector count = [%d]\n",
+    		argv[3], iSourceSize, iKernel32SectorCount);
+
+
+    // Section 4
     // modify TOTALSECTORCOUNT part of Bootloader.asm
     printf("[INFO] Start to write kernel information\n");
-    WriteKernelInformation(iTargetFd, iKernel32SectorCount);
+    WriteKernelInformation(
+        iTargetFd,
+        iKernel32SectorCount + iKernel64SectorCount,
+        iKernel32SectorCount
+    );
     printf("[INFO] Image file create complete\n");
 
     close(iTargetFd);
@@ -128,8 +164,13 @@ int AdjustInSectorSize(int iFd, int iSourceSize) {
 // modify TOTALSECTORCOUNT part of Bootloader.asm so bootloader can
 // load image to the memory
 // iTargetFd: descriptor of target file
-// iKernelSectorCount: number of sectors to load to the memory
-void WriteKernelInformation(int iTargetFd, int iKernelSectorCount) {
+// iTotalKernelSectorCount: number of sectors to load to the memory
+// iKernel32SectorCount: number of sectors of Kernel32.bin
+void WriteKernelInformation(
+    int iTargetFd,
+    int iTotalKernelSectorCount,
+    int iKernel32SectorCount
+) {
     unsigned short usData;
     long lPosition;
 
@@ -141,11 +182,17 @@ void WriteKernelInformation(int iTargetFd, int iKernelSectorCount) {
     	exit(-1);
     }
 
-    usData = (unsigned short) iKernelSectorCount;
+    usData = (unsigned short) iTotalKernelSectorCount;
     write(iTargetFd, &usData, 2);
-
     printf("[INFO] Total sector count except boot loader [%d]\n",
-    		iKernelSectorCount);
+    		iTotalKernelSectorCount);
+
+    // file descriptor position pointer is incremented by 2
+    // automatically. No need to call lseek again
+    usData = (unsigned short) iKernel32SectorCount;
+    write(iTargetFd, &usData, 2);
+    printf("[INFO] Total sector count of protected mode kernel [%d]\n",
+    		iKernel32SectorCount);
 }
 
 // concatenate Source file to the end of Target file

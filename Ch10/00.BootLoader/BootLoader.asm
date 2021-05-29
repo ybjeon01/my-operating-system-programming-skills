@@ -10,11 +10,13 @@ SECTION .text
 jmp 0x07C0:START
 
 ; env for MINT64OS
-; TOTALSECTORCOUNT will be modified by ImageMaker program in 
-; Utility directory.
-; When you read the code, just assume that the number is total number of
+; TOTALSECTORCOUNT and KERNEL32SECTOR will be modified by ImageMaker
+; program in Utility directory.
+; When you read the code, just assume that TOTALSECTORCOUNT is total number of
 ; sectors of overall image except bootloader part
+; and KERNEL32SECTOR is the number of sectors of Kernel32 
 TOTALSECTORCOUNT: dw 0 
+KERNEL32SECTORCOUNT: dw 0
 
 ; code section
 START:
@@ -78,6 +80,7 @@ RESETDISK:
 
     ; 0x10000 is start addr of OS in memory
     ; regs for reading data: dest_addr
+    ; es:bx address to load the data
     mov si, 0x1000
     mov es, si
     mov bx, 0x0000
