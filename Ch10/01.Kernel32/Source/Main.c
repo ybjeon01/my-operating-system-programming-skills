@@ -6,10 +6,10 @@
 void kPrintString(int iX, int iY, const char *pcString);
 BOOL kInitializeKernel64Area(void);
 BOOL kIsMemoryEnough(void);
-
+void kCopyKernel64ImageTo2Mbyte(void);
 
 void Main(void) {
-	kPrintString(0, 3, "C Language Kernel Started~!!!");
+	kPrintString(0, 3, "C Language Kernel Started~!!!...............[Pass]");
 
     // Check if computer has enough RAM.
     // MINT64OS requires 64MB RAM
@@ -72,6 +72,11 @@ void Main(void) {
     	while (1);
     }
 
+    // copy IA-32e mode kernel in somewhere under address 1MiB
+    // to 0x200000 (2Mbyte)
+    kPrintString(0, 9, "Copy IA-32e Kernel To 2M Address............[    ]");
+    kCopyKernel64ImageTo2Mbyte();
+    kPrintString(45, 9, "Pass");
 
     // switch to long mode. 
     // This function execute code at 0x200000(2MB) Because of internal
@@ -88,7 +93,7 @@ void Main(void) {
 // see string in screen.
 // iX: row where string will be
 //     possible range: [0~24]
-// iY: colume where string will be
+// iY: column where string will be
 //     possible range: [0~79]
 // string: string to write in screen
 // 
@@ -147,4 +152,30 @@ BOOL kIsMemoryEnough(void) {
         pdwCurrentAddress += (0x100000 / 4);
     }
     return TRUE;
+}
+
+// Copy IA-32e mode kernel somewhere under address 1MB
+// to 0x20000 (2Mbyte)
+void kCopyKernel64ImageTo2Mbyte(void) {
+    WORD wKernel32SectorCount, wTotalKernelSectorCount;
+    DWORD * pdwSourceAddress, *pdwDestinationAddress;
+    int i;
+    int iKernel64ByteCount;
+
+    // count of overall sectors except bootloader is at
+    // 0x7c05 and count of protected mode kernel is at
+    // 0x7c07
+    wTotalKernelSectorCount = *((WORD *) 0x7c05);
+    wKernel32SectorCount = *((WORD *) 0x7c07);
+
+    pdwSourceAddress = (DWORD *) (0x10000 + (wKernel32SectorCount * 512));
+    pdwDestinationAddress = (DWORD *) 0x200000;
+
+    iKernel64ByteCount = 512 * (wTotalKernelSectorCount - wKernel32SectorCount);
+    for (i = 0; i < iKernel64ByteCount / 4; i++) {
+    	// copy 4 bytes at once
+    	*pdwDestinationAddress = *pdwSourceAddress;
+    	pdwDestinationAddress++;
+    	pdwSourceAddress++;
+    }
 }
