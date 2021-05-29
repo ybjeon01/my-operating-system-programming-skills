@@ -9,6 +9,7 @@ SECTIONS {
         /* text section of other files comes after main in the order of input */
         *(.text)
     }
+    . = ALIGN(512);
 
     /* as .rodata data comes here, operand of instruction that references to a
      * data in .rodata is adjusted
@@ -17,7 +18,6 @@ SECTIONS {
         *(.rodata)
 
         /* add padding to the end so .rodata is aligned to multiply of 512 */
-        . = ALIGN(512);
     }
 
     /* discard all other sections in input files. If this is not specified,
