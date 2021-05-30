@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch10/summary/assets/result2.PNG)
+![capture of MINT64OS screen](Ch11/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -327,3 +327,36 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
         * this program is modified to add 64 bit binary to image file
         * modify KERNEL32SECTORCOUNT in Bootloader.asm
+
+* Ch11
+
+    * describe Port I/O
+    * describe PS/2 Controller, keyboard, scan code, and ascii code
+    * 
+    
+    * summaries
+
+        * [11-1.md](Ch11/summary/11-1.md)
+        * [11-2.md](Ch11/summary/11-2.md)
+        * [11-3.md](Ch11/summary/11-3.md)
+        * [11-4.md](Ch11/summary/11-4.md)
+
+    * [result image](Ch11/summary/assets/result.PNG)
+
+    1. 02.Kernel64/Source/[Keyboard.h, Keyboard.c]
+
+        * has functions that handle PS/2 Controller
+
+    2. 02.Kernel64/Source/[AssemblyUtility.asm, AssemblyUtility.h]
+
+        * has functions that read and write through Port I/O
+        * allow C code to utilize Port I/O
+
+    3. 02.Kernel64/Source/Main.c
+
+        * read key from keyboard and print it to monitor
+
+    4. 02.Kernel64/binary_amd64.x
+
+        * add .bss and .data section to image file because Keyboard.c has data
+        in these sections
