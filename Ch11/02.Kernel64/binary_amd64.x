@@ -21,8 +21,14 @@ SECTIONS {
      */
     .rodata : {
         *(.rodata)
-
-        /* add padding to the end so .rodata is aligned to multiply of 512 */
+    }
+    . = ALIGN(512);
+    .data : {
+        *(.data)
+    }
+    . = ALIGN(512);
+    .bss : {
+        *(.bss)
     }
 
     /* discard all other sections in input files. If this is not specified,
