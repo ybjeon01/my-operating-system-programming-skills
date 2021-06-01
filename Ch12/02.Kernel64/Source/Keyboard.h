@@ -59,31 +59,31 @@
 #pragma pack(push ,1)
 
 typedef struct kKeyMappingEntryStruct {
-	// normal ASCII code that is not combined with shift or Caps Lock
-	BYTE bNormalCode;
-	// key combined with shift or Caps Lock
-	BYTE bCombinedCode;
+    // normal ASCII code that is not combined with shift or Caps Lock
+    BYTE bNormalCode;
+    // key combined with shift or Caps Lock
+    BYTE bCombinedCode;
 } KEYMAPPINGENTRY;
 
 #pragma pack(pop)
 
 typedef struct kKeyboardManagerStruct {
-	// current state of keyboard
-	BOOL bShiftDown;
-	BOOL bCapsLockOn;
-	BOOL bNumLockOn;
-	BOOL bScrollLockOn;
+    // current state of keyboard
+    BOOL bShiftDown;
+    BOOL bCapsLockOn;
+    BOOL bNumLockOn;
+    BOOL bScrollLockOn;
 
     // Unlike normal scan code, extended scan code is two bytes and first byte
     // is 0xE0
     // Because only one byte can be processed at once, it is necessary to
     // set flag if first byte is extended code
-	BOOL bExtendedCodeIn;
-	// Pause key is unique extended scan code whose first byte starts with
+    BOOL bExtendedCodeIn;
+    // Pause key is unique extended scan code whose first byte starts with
     // 0xE1 and whose size is three bytes.
     // If this variable is set, kConvertScanCodeToASCIICode function ignores 
     // as many as the number specified in this variable
-	int iSkipCountForPause;
+    int iSkipCountForPause;
 } KEYBOARDMANAGER;
 
 
@@ -171,9 +171,9 @@ void updateCombinationKeyStatusAndLED(BYTE bScanCode);
 //   two or three bytes. To finish analyzing, read more scan code
 //   from keyboard and call this function again with the new scan code
 BOOL kConvertScanCodeToASCIICode(
-	BYTE bScanCode,
-	BYTE *pbASCIICode,
-	BOOL *pbFlags);
+    BYTE bScanCode,
+    BYTE *pbASCIICode,
+    BOOL *pbFlags);
 
 
 #endif /* __KEYBOARD_H__ */

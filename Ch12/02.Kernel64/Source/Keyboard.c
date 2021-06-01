@@ -4,13 +4,13 @@
 
 // check if output buffer of PS/2 Controller is full.
 BOOL kIsOutputBufferFull(void) {
-	// read state register from PS/2 Controller
-	// if bit 0 is set to 1, PS/2 Controller filled buffer
-	// with data sent by keyboard
-	if (kInPortByte(0x64) & 0x01) {
-		return TRUE;
-	}
-	return FALSE;
+    // read state register from PS/2 Controller
+    // if bit 0 is set to 1, PS/2 Controller filled buffer
+    // with data sent by keyboard
+    if (kInPortByte(0x64) & 0x01) {
+        return TRUE;
+    }
+    return FALSE;
 }
 
 
@@ -20,13 +20,13 @@ BOOL kIsOutputBufferFull(void) {
 //   and output buffer.
 //   this function is used when command is needed to sent to keyboard
 BOOL kIsInputBufferFull(void) {
-	// read state register from PS/2 Controller
-	// if bit 1 is set to 1, the data in data register is not flushed to
+    // read state register from PS/2 Controller
+    // if bit 1 is set to 1, the data in data register is not flushed to
     // keyboard yet
-	if (kInPortByte(0x64) & 0x02) {
-		return TRUE;
-	}
-	return FALSE;
+    if (kInPortByte(0x64) & 0x02) {
+        return TRUE;
+    }
+    return FALSE;
 }
 
 
@@ -88,7 +88,7 @@ BYTE kGetKeyboardScanCode(void) {
 BOOL kChangeKeyboardLED(
     BOOL bCapsLockOn,
     BOOL bNumLockOn,
-	BOOL bScrollLockOn
+    BOOL bScrollLockOn
 ) {
     int i, j;
 
@@ -308,13 +308,13 @@ static KEYMAPPINGENTRY gs_vstKeyMappingTable[ KEY_MAPPINGTABLEMAXCOUNT ] =
 // return:
 //   True if scan code is alphabet, otherwise False
 BOOL kIsAlphabetScanCode(BYTE bScanCode) {
-	if (
+    if (
         ('a' <= gs_vstKeyMappingTable[bScanCode].bNormalCode) &&
-		(gs_vstKeyMappingTable[bScanCode].bNormalCode <= 'z')
+        (gs_vstKeyMappingTable[bScanCode].bNormalCode <= 'z')
     ) {
-		return TRUE;
-	}
-	return FALSE;
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // private function that checks if scan code is number or symbol
@@ -325,8 +325,8 @@ BOOL kIsAlphabetScanCode(BYTE bScanCode) {
 //   True if scan code is not alphabet, otherwise False
 BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode) {
     if (2 <= bScanCode && bScanCode <= 53 &&
-    	 kIsAlphabetScanCode(bScanCode) == FALSE) {
-    	return TRUE;
+         kIsAlphabetScanCode(bScanCode) == FALSE) {
+        return TRUE;
     }
     return FALSE;
 }
@@ -337,10 +337,10 @@ BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode) {
 // return:
 //   True if scan code is from number pad, otherwise False
 BOOL kIsNumberPadScanCode(BYTE bScanCode) {
-	if (71 <= bScanCode && bScanCode <= 83) {
-		return TRUE;
-	}
-	return FALSE;
+    if (71 <= bScanCode && bScanCode <= 83) {
+        return TRUE;
+    }
+    return FALSE;
 }
 
 // private function that checks if combined key value should be used
@@ -350,48 +350,48 @@ BOOL kIsNumberPadScanCode(BYTE bScanCode) {
 // return:
 //   True if combined key value should be used
 BOOL kShouldUseCombinedCode(BYTE bScanCode) {
-	BYTE bDownScanCode;
-	BOOL bUseCombinedKey = FALSE;
+    BYTE bDownScanCode;
+    BOOL bUseCombinedKey = FALSE;
 
-	// 0x7F = 0b01111111
-	// released key's scan code is pressed key's scan code with
-	// bit 8 set
-	bDownScanCode = bScanCode & 0x7F;
+    // 0x7F = 0b01111111
+    // released key's scan code is pressed key's scan code with
+    // bit 8 set
+    bDownScanCode = bScanCode & 0x7F;
 
     // alphabet section
-	if (kIsAlphabetScanCode(bDownScanCode)) {
+    if (kIsAlphabetScanCode(bDownScanCode)) {
         // if either one of Shift key or Caps Lock is pressed, then
         // return true
-		if (
+        if (
             gs_stKeyboardManager.bShiftDown ^
-		    gs_stKeyboardManager.bCapsLockOn
+            gs_stKeyboardManager.bCapsLockOn
         ) {
-			return TRUE;
-		}
-		return FALSE;
-	}
+            return TRUE;
+        }
+        return FALSE;
+    }
 
-	// number and symbols section
-	if (kIsNumberOrSymbolScanCode(bDownScanCode)) {
-		if (gs_stKeyboardManager.bShiftDown) {
-			return TRUE;
-		}
-		return FALSE;
-	}
+    // number and symbols section
+    if (kIsNumberOrSymbolScanCode(bDownScanCode)) {
+        if (gs_stKeyboardManager.bShiftDown) {
+            return TRUE;
+        }
+        return FALSE;
+    }
 
-	// In case that Num Lock is activated, number pad except
-	// extended number pad scan code is affected by shift key
-	if (kIsNumberPadScanCode(bDownScanCode) &&
-		gs_stKeyboardManager.bExtendedCodeIn == FALSE) {
+    // In case that Num Lock is activated, number pad except
+    // extended number pad scan code is affected by shift key
+    if (kIsNumberPadScanCode(bDownScanCode) &&
+        gs_stKeyboardManager.bExtendedCodeIn == FALSE) {
         if (gs_stKeyboardManager.bNumLockOn) {
-        	return TRUE;
+            return TRUE;
         }
         else {
             return FALSE;
         }
-	}
-	// should not hit here. Just in case I made a mistake in code
-	return FALSE;
+    }
+    // should not hit here. Just in case I made a mistake in code
+    return FALSE;
 }
 
 // private function that updates a global KeyboardManager structure that 
@@ -410,13 +410,13 @@ void updateCombinationKeyStatusAndLED(BYTE bScanCode) {
         bDownScanCode = bScanCode & 0x7F;
     }
     else {
-    	bDown = TRUE;
-    	bDownScanCode = bScanCode;
+        bDown = TRUE;
+        bDownScanCode = bScanCode;
     }
 
     // Pressed left and right shift scan code
     if (bDownScanCode == 42 || bDownScanCode == 54) {
-    	gs_stKeyboardManager.bShiftDown = bDown;
+        gs_stKeyboardManager.bShiftDown = bDown;
     }
     // Pressed caps lock scan code
     else if (bDownScanCode == 58 && bDown == TRUE) {
@@ -430,14 +430,14 @@ void updateCombinationKeyStatusAndLED(BYTE bScanCode) {
     }
     // pressed scroll lock scan code
     else if (bDownScanCode == 70 && bDown == TRUE) {
-    	gs_stKeyboardManager.bScrollLockOn ^= TRUE;
-    	bLEDStatusChanged = TRUE;
+        gs_stKeyboardManager.bScrollLockOn ^= TRUE;
+        bLEDStatusChanged = TRUE;
     }
 
     // send command to keyboard if LED status is changed
     if (bLEDStatusChanged) {
-    	kChangeKeyboardLED(gs_stKeyboardManager.bCapsLockOn,
-    			            gs_stKeyboardManager.bNumLockOn,
+        kChangeKeyboardLED(gs_stKeyboardManager.bCapsLockOn,
+                            gs_stKeyboardManager.bNumLockOn,
                           gs_stKeyboardManager.bScrollLockOn);
     }
 }
@@ -457,7 +457,7 @@ void updateCombinationKeyStatusAndLED(BYTE bScanCode) {
 BOOL kConvertScanCodeToASCIICode(
     BYTE bScanCode,
     BYTE *pbASCIICode,
-	BOOL *pbFlags) {
+    BOOL *pbFlags) {
     
     BOOL bUseCombinedKey;
 
@@ -482,34 +482,34 @@ BOOL kConvertScanCodeToASCIICode(
     // Extension codes except pause start with 0xE0 and
     // their size is two bytes
     else if (bScanCode == 0xE0) {
-    	gs_stKeyboardManager.bExtendedCodeIn = TRUE;
-    	return FALSE;
+        gs_stKeyboardManager.bExtendedCodeIn = TRUE;
+        return FALSE;
     }
 
     // check if it should return combined key
     bUseCombinedKey = kShouldUseCombinedCode(bScanCode);
 
     if (bUseCombinedKey) {
-    	*pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bCombinedCode;
+        *pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bCombinedCode;
     }
     else {
-    	*pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bNormalCode;
+        *pbASCIICode = gs_vstKeyMappingTable[bScanCode & 0x7F].bNormalCode;
     }
 
     // check if extension key
     if (gs_stKeyboardManager.bExtendedCodeIn) {
-    	*pbFlags = KEY_FLAGS_EXTENDEDKEY;
-    	gs_stKeyboardManager.bExtendedCodeIn = FALSE;
+        *pbFlags = KEY_FLAGS_EXTENDEDKEY;
+        gs_stKeyboardManager.bExtendedCodeIn = FALSE;
     }
     else {
-    	*pbFlags = 0;
+        *pbFlags = 0;
     }
 
     // remember that "==", equal operator, precedes "&" bitwise operator
     // if you do not enclose "bScanCode & 0x80" with parentheses,
     // the pbFlags does not include KEY_FLAGS_DOWN
     if ( (bScanCode & 0x80) == 0) {
-    	*pbFlags |= KEY_FLAGS_DOWN;
+        *pbFlags |= KEY_FLAGS_DOWN;
     }
 
     // update combined key press or release state
