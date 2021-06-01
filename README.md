@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch11/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch12/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -332,7 +332,7 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
     * describe Port I/O
     * describe PS/2 Controller, keyboard, scan code, and ascii code
-    * 
+    * describe IA-32e mode calling convention
     
     * summaries
 
@@ -360,3 +360,34 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
         * add .bss and .data section to image file because Keyboard.c has data
         in these sections
+
+* Ch12
+
+    * describe interrupt and exception
+    * describe TSS/IDT/IST data structures for interrupt/exception handling
+    * describe new memory-related utility functions
+    
+    * summaries
+
+        * [12-1.md](Ch12/summary/12-1.md)
+        * [12-2.md](Ch12/summary/12-2.md)
+        * [12-3.md](Ch12/summary/12-3.md)
+
+    * [result image](Ch12/summary/assets/result.PNG)
+
+    1. 02.Kernel64/Source/[Descriptor.h, Descriptor.c]
+
+        * has MINT64OS specific GDT/IDT initializing functions
+
+    2. 02.Kernel64/Source/[AssemblyUtility.asm, AssemblyUtility.h]
+
+        * has functions that load GDTR, TSS, and IDTR to registers
+
+    3. 02.Kernel64/Source/Main.c
+
+        * replace GDTR with new one in 64 bit kernel data area
+        * if user hit zero on keyboard, zero division exception occurs
+
+    4. 02.Kernel64/Source/Utility[.c, .h]
+
+        * has memory-related utility functions: kMemCmp, kMemSet, kMemcpy
