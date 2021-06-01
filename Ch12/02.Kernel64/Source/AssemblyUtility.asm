@@ -2,9 +2,11 @@
 
 SECTION .text
 
-; read a byte from port
-; or write a byte to port
-global kInPortByte, kOutPortByte
+; exported functions to other code
+global kInPortByte, kOutPortByte, kLoadGDTR, kLoadTR, kLoadIDTR
+
+
+;; I/O port related functions
 
 ; function that reads one byte from port
 ; this function follows IA-32e mode function convention
@@ -38,3 +40,28 @@ kOutPortByte:
     pop rax
     pop rdx
     ret
+
+
+;; GDT, IDT, and TSS related functions
+
+; function that loads GDTR address to register
+; param: 
+;   qwGDTRAddress: address of GDTR
+kLoadGDTR:
+    lgdt [rdi]
+    ret
+
+; function that loads TSS descriptor offset to TR register
+; param:
+;   wTSSSegmentOffset: TSS descriptor offset in GDT
+kLoadTR:
+    ltr di;
+    ret
+
+; function that loads IDTR address to register
+; param:
+;   qwIDTRAddress: address of IDTR
+kLoadIDTR:
+    lidt [rdi]
+    ret
+
