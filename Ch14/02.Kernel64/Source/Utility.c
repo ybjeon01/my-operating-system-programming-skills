@@ -1,5 +1,5 @@
 #include "Utility.h"
-
+#include "AssemblyUtility.h"
 
 /* memory related functions */
 
@@ -44,4 +44,32 @@ int kMemCmp (const void *pvDestination, const void *pvSource, int iSize) {
         }
     }
     return 0;
+}
+
+
+/* Interrupt related functions */
+
+// enable or disable interrupt and return old interrupt state
+// params:
+//   bEnableInterupt: True to enable / False to disable
+// return:
+//   True if interrupt was enabled. Otherwise, False
+BOOL kSetInterruptFlag(BOOL bEnableInterrupt) {
+	QWORD qwRFLAGS;
+	qwRFLAGS = kReadRFLAGS();
+
+	if (bEnableInterrupt == TRUE) {
+		kEnableInterrupt();
+	}
+	else {
+		kDisableInterrupt();
+	}
+
+	// check IF bit (interrupt flag, bit 9)
+	// 'qwRFLAGS & 0x0200' is bit operation so you should not use
+	// "return qwRFLAGS & 0x0200;"
+    if (qwRFLAGS & 0x0200) {
+    	return TRUE;
+    }
+    return FALSE;
 }

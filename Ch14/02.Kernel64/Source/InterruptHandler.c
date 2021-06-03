@@ -1,5 +1,6 @@
 #include "InterruptHandler.h"
 #include "PIC.h"
+#include "Keyboard.h"
 
 // common exception handler for exceptions that do not have handler
 // info:
@@ -57,6 +58,7 @@ void kKeyboardHandler(int iVectorNumber) {
     char vcBuffer[] = "[INT:  , ]";
     // count how many interrupt occurs
     static int g_iCommonInterruptCount = 0;
+    BYTE bTemp;
 
     // interrupt number as ASCII two-digit number
     vcBuffer[5] = '0' + iVectorNumber / 10;
@@ -66,6 +68,11 @@ void kKeyboardHandler(int iVectorNumber) {
     vcBuffer[8] = '0' + g_iCommonInterruptCount;
     g_iCommonInterruptCount = (g_iCommonInterruptCount + 1) % 10;
     kPrintString(59, 0, vcBuffer);
+
+    if (kIsOutputBufferFull()) {
+        bTemp = kGetKeyboardScanCode();
+        kConvertScanCodeAndPutQueue(bTemp);
+    }
 
     // send EOI to PIC controller
     // reason for iVectorNumber - PIC_IRQSTARTVECTOR is that

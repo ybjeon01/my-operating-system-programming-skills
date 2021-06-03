@@ -56,6 +56,8 @@
 #define KEY_F12         0x9F
 #define KEY_PAUSE       0xA0
 
+#define KEY_MAXQUEUECOUNT 100
+
 #pragma pack(push ,1)
 
 typedef struct kKeyMappingEntryStruct {
@@ -64,8 +66,6 @@ typedef struct kKeyMappingEntryStruct {
     // key combined with shift or Caps Lock
     BYTE bCombinedCode;
 } KEYMAPPINGENTRY;
-
-#pragma pack(pop)
 
 typedef struct kKeyboardManagerStruct {
     // current state of keyboard
@@ -86,9 +86,21 @@ typedef struct kKeyboardManagerStruct {
     int iSkipCountForPause;
 } KEYBOARDMANAGER;
 
+typedef struct kKeyDataStruct {
+	// scan code from keyboard
+	BYTE bScanCode;
+	// ASCII code converted from scan code
+	BYTE bASCIICode;
+	// flag that stores state (keypress, keyup, shift)
+	BYTE bFlags;
+} KEYDATA;
+
+#pragma pack(pop)
+
 
 // check if output buffer of PS/2 Controller is full.
 BOOL kIsOutputBufferFull(void);
+
 
 // check if input buffer of PS/2 Controller is full.
 // info:
@@ -97,19 +109,23 @@ BOOL kIsOutputBufferFull(void);
 //   this function is used when command is needed to sent to keyboard
 BOOL kIsInputBufferFull(void);
 
+
 // activate keyboard, so user can get data from keyboard
 // info:
 //   this function activates PS/2 Controller and
 //   keyboard itself
 BOOL kActivateKeyboard(void);
 
+
 // read byte from output buffer
 // caution:
 //   if there is no data in output buffer, computer is freezed
 BYTE kGetKeyboardScanCode(void);
 
+
 // switch keyboard LED on or off
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLokOn, BOOL bScrollLockOn);
+
 
 // enable A20 Gate through PS/2 Controller to access bigger memory address
 // info:
@@ -119,17 +135,20 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLokOn, BOOL bScrollLockOn);
 //   3. PS/2 Controller
 void kEnableA20Gate(void);
 
+
 // reset processor to reboot computer
 void kReboot(void);
 
-// private function that checks if scan code from keyboard is alphabet
+
+// function that checks if scan code from keyboard is alphabet
 // params:
 //   bScanCode: byte code from keyboard
 // return:
 //   True if scan code is alphabet, otherwise False
 BOOL kIsAlphabetscanCode(BYTE bScanCode);
 
-// private function that checks if scan code is number or symbol
+
+// function that checks if scan code is number or symbol
 // this function excludes number pad
 // params:
 //   bScanCode: byte code from keyboard
@@ -137,14 +156,16 @@ BOOL kIsAlphabetscanCode(BYTE bScanCode);
 //   True if scan code is not alphabet, otherwise False
 BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode);
 
-// private function that checks if scan code is number pad
+
+// function that checks if scan code is number pad
 // params:
 //   bScanCode: byte code from keyboard
 // return:
 //   True if scan code is from number pad, otherwise False
 BOOL kIsNumberPadScanCode(BYTE bScanCode);
 
-// private function that checks if combined key value should be used
+
+// function that checks if combined key value should be used
 // ex) Shift + a = uppercase a = A
 // params:
 //   bScanCode: byte code from keyboard
@@ -152,13 +173,15 @@ BOOL kIsNumberPadScanCode(BYTE bScanCode);
 //   True if combined key value should be used
 BOOL kShouldUseCombinedCode(BYTE bScanCode);
 
-// private function that updates a global KeyboardManager structure that 
+
+// function that updates a global KeyboardManager structure that 
 // contains current keyboard state.
 // params:
 //   bScanCode: byte code from keyboard
 void updateCombinationKeyStatusAndLED(BYTE bScanCode);
 
-// public function that analyze scan code based on current keyboard state
+
+// function that analyze scan code based on current keyboard state
 // params:
 //   bScanCode: scan code from keyboard
 //   pbASCIICode: address where ascii code corresponding to the scan code is
@@ -174,6 +197,39 @@ BOOL kConvertScanCodeToASCIICode(
     BYTE bScanCode,
     BYTE *pbASCIICode,
     BOOL *pbFlags);
+
+
+// function that initializes keyboard buffer and activates
+// keyboard controller and keyboard
+// return:
+//   True if success. Otherwise False
+BOOL kInitializeKeyboard(void);
+
+
+// function that gets key data from keyboard buffer
+// params:
+//   pstData: pointer to variable will hold the data from the buffer
+// return:
+//   True if succeed. Otherwise, False
+BOOL kGetKeyFromKeyQueue(KEYDATA *pstData);
+
+
+// wait until keyboard gives ACK signal. if the data in output buffer is not
+// ACK signal, put the scan code into queue and keep waiting for ACK signal
+// return:
+//   True if ACK is received. otherwise False after timeout
+// info:
+//   timeout is 100 keys * 0xFFFF counters
+BOOL kWaitForACKAndPutOtherScanCode(void);
+
+
+// function that converts scan code to internal KeyData data structure
+// and pushs the KeyData struct to queue
+// params:
+//   bScanCode: scan code from keyboard
+// return:
+//   True if succeed. Otherwise, False
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode);
 
 
 #endif /* __KEYBOARD_H__ */

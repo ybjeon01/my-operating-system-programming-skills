@@ -32,13 +32,11 @@ void Main(void) {
     kPrintString(45, 14, "PASS");
 
 
-    /* Activate keyboard */
+    /* Activate Keyboard and initialize keyboard buffer */
 
-    kPrintString(0, 15, "Keyboard Activate...........................[    ]");
+    kPrintString(0, 15, "Keyboard Activate And Queue Initialize......[    ]");
 
-    // if keyboard input buffer is full after 0xFFFF counters or does not
-    // response with ACK code, activation fails
-    if (kActivateKeyboard()) {
+    if (kInitializeKeyboard()) {
         kPrintString(45, 15, "Pass");
         // set Num Lock, Caps Lock, Scroll Lock off
         kChangeKeyboardLED(FALSE, FALSE, FALSE);
@@ -65,23 +63,20 @@ void Main(void) {
     char vcTemp[2] = {0, };
     BYTE bFlags;
     BYTE bTemp;
-    int i = 0; 
-    while (TRUE) {
-        // if key is sent from keyboard
-        if (kIsOutputBufferFull()) {
-            bTemp = kGetKeyboardScanCode();
-            // convert scan code to ASCII code
-            if (kConvertScanCodeToASCIICode(bTemp, &(vcTemp[0]), &bFlags)) {
-                // print only when key is pressed. In other word,
-                // do not print when key is released
-                if (bFlags & KEY_FLAGS_DOWN) {
-                    kPrintString(i++, 17, vcTemp);
+    int i = 0;
+    // struct that contains scan code, ascii code, and keyboard state
+    KEYDATA stData;
 
-                    // cause zero division exception to test that
-                    // interrupt-related code is working 
-                    if (vcTemp[0] == '0') {
+    while (TRUE) {
+        if (kGetKeyFromKeyQueue(&stData)) {
+            if (stData.bFlags & KEY_FLAGS_DOWN) {
+                vcTemp[0] = stData.bASCIICode;
+                kPrintString(i++, 17, vcTemp);
+
+                // cause zero division exception to test that
+                // interrupt-related code is working 
+                if (vcTemp[0] == '0') {
                         bTemp = bTemp / 0;
-                    }
                 }
             }
         }

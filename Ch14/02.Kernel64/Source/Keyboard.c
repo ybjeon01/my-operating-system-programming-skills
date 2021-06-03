@@ -1,8 +1,12 @@
 #include "Types.h"
 #include "AssemblyUtility.h"
 #include "Keyboard.h"
+#include "Queue.h"
+#include "Utility.h"
 
-// check if output buffer of PS/2 Controller is full.
+// function that checks if output buffer of PS/2 Controller is full.
+// return:
+//   True if output buffer is full. Otherwise, False
 BOOL kIsOutputBufferFull(void) {
     // read state register from PS/2 Controller
     // if bit 0 is set to 1, PS/2 Controller filled buffer
@@ -14,7 +18,9 @@ BOOL kIsOutputBufferFull(void) {
 }
 
 
-// check if input buffer of PS/2 Controller is full.
+// function that checks if input buffer of PS/2 Controller is full.
+// return:
+//   True if input buffer is full. Otherwise, False
 // info:
 //   PS/2 Controller shares a register, called data register for input buffer
 //   and output buffer.
@@ -30,12 +36,62 @@ BOOL kIsInputBufferFull(void) {
 }
 
 
+// wait until keyboard gives ACK signal. if the data in output buffer is not
+// ACK signal, put the scan code into queue and keep waiting for ACK signal
+// return:
+//   True if ACK is received. otherwise False after timeout
+// info:
+//   timeout is 100 keys * 0xFFFF counters
+BOOL kWaitForACKAndPutOtherScanCode(void) {
+    int i, j;
+    BYTE bData;
+    BOOL bResult = FALSE;
+
+    // Because keyboard sends acknowledge code for every command,
+    // it is necessary to wait for the code. it is possible that
+    // output buffer is filled with some key data before ACK code,
+    // transmitted data is checked 100 times
+	for (j = 0; j < 100; j++) {
+        // Keyboard is not as fast as CPU. it is necessary to wait for input
+        // buffer is filled. 0xFFFF is just arbitrary number that I think is
+        // enough loop counter for waiting. If buffer is full after 0xFFFF,
+        // buffer is ignored and activation command is sent
+		for (i = 0; i < 0xFFFF; i++) {
+			if (kIsOutputBufferFull()) {
+                break;
+            }
+		}
+
+		bData = kInPortByte(0x60);
+		// if data is ACK
+		if (bData == 0xFA) {
+			bResult = TRUE;
+			break;
+		}
+		// if data is not ACK, convert scan code to ASCII code and put the
+		// ASCII code to keyboard queue
+		else {
+            kConvertScanCodeAndPutQueue(bData);
+		}
+	}
+	return bResult;
+}
+
+
 // activate keyboard, so user can get data from keyboard
 // info:
 //   this function activates PS/2 Controller and
 //   keyboard itself
+// return:
+//   True if keyboard successfully activated. Otherwise False
 BOOL kActivateKeyboard(void) {
     int i, j;
+    BOOL bPreviousInterrupt;
+    BOOL bResult;
+
+    // disable all interrupt while working with queue and keyboard
+    bPreviousInterrupt = kSetInterruptFlag(FALSE);
+
 
     // activate keyboard feature of PS/2 Controller
     // writing to 0x64: controller register
@@ -55,22 +111,9 @@ BOOL kActivateKeyboard(void) {
     // send keyboard activation command to keyboard
     kOutPortByte(0x60, 0xF4);
 
-    // Because keyboard sends acknowledge code for every command,
-    // it is necessary to wait for the code. it is possible that
-    // output buffer is filled with some key data before ACK code,
-    // transmitted data is checked 100 times
-    for (j = 0; j < 100; j++) {
-        for (i = 0; i < 0xFFFF; i++) {
-            if (kIsOutputBufferFull()) {
-                break;
-            }
-        }
-        // acknowledge code: 0xFA
-        if (kInPortByte(0x60) == 0xFA) {
-            return TRUE;
-        }
-    }
-    return FALSE;
+    bResult = kWaitForACKAndPutOtherScanCode();
+    kSetInterruptFlag(bPreviousInterrupt);
+    return bResult;
 }
 
 
@@ -91,6 +134,11 @@ BOOL kChangeKeyboardLED(
     BOOL bScrollLockOn
 ) {
     int i, j;
+    BOOL bPreviousInterrupt;
+    BOOL bResult;
+    BOOL bData;
+
+    bPreviousInterrupt = kSetInterruptFlag(FALSE);
 
     // wait for input buffer to be empty
     for (i = 0; i < 0xFFFF; i++) {
@@ -101,41 +149,34 @@ BOOL kChangeKeyboardLED(
     // keyboard command that signals LED change: 0xED
     kOutPortByte(0x60, 0xED);
 
-    // wait for ACK code from keyboard
-    for (j = 0; j < 100; j++) {
-        for (i = 0; i < 0xFFFF; i++) {
-            if (kIsOutputBufferFull()) {
-                break;
-            }
-        }
-        if (kInPortByte(0x60) == 0xFA) {
+    // wait until command was flushed into keyboard
+    for (i = 0; i < 0xFFFF; i++) {
+        if (!kIsInputBufferFull()) {
             break;
         }
     }
-    // fail to get ACK code
-    if (j >= 100) {
+
+    // wait for ACK code from keyboard
+    bResult = kWaitForACKAndPutOtherScanCode();
+    if (bResult == FALSE) {
+        kSetInterruptFlag(bPreviousInterrupt);
         return FALSE;
     }
 
     // send wanted LED state to keyboard
     kOutPortByte(0x60, bCapsLockOn << 2 | bNumLockOn << 1 | bScrollLockOn);
 
-    // wait for ACK code from keyboard
-    for (j = 0; j < 100; j++) {
-        for (i = 0; i < 0xFFFF; i++) {
-            if (kIsOutputBufferFull()) {
-                break;
-            }
-        }
-        if (kInPortByte(0x60) == 0xFA) {
+    // wait until data was flushed into keyboard
+    for (i = 0; i < 0xFFFF; i++) {
+        if (!kIsInputBufferFull()) {
             break;
         }
     }
-    // fail to get ACK code
-    if (j >= 100) {
-        return FALSE;
-    }
-    return TRUE;
+
+    // wait for ACK code from keyboard
+    bResult = kWaitForACKAndPutOtherScanCode();
+    kSetInterruptFlag(bPreviousInterrupt);
+    return bResult;
 }
 
 
@@ -148,6 +189,9 @@ BOOL kChangeKeyboardLED(
 void kEnableA20Gate(void) {
     BYTE kOutputPortData;
     int i;
+    BOOL bPreviousInterrupt;
+
+    bPreviousInterrupt = kSetInterruptFlag(FALSE);
 
     // In PS/2 Controller, there is a output port that you cannot access by
     // I/O port address. two keyboard controller commands(0xD0/0xD1) sends
@@ -177,12 +221,17 @@ void kEnableA20Gate(void) {
     // send data in input buffer to output port
     kOutPortByte(0x64, 0xD1);
     kOutPortByte(0x60, kOutputPortData);
+
+    kSetInterruptFlag(bPreviousInterrupt);
 }
 
 // reset processor to reboot computer
 void kReboot(void) {
     int i;
-    
+    BOOL bPreviousInterrupt;
+
+    bPreviousInterrupt = kSetInterruptFlag(FALSE);
+
     // wait for input buffer to be empty
     for (i = 0; i < 0xFFFF; i++) {
         if (!kIsInputBufferFull()) {
@@ -206,6 +255,9 @@ void kReboot(void) {
 
 // keyboard manager that stores states of keyboard
 static KEYBOARDMANAGER gs_stKeyboardManager = {0, };
+
+static QUEUE gs_stKeyQueue;
+static KEYDATA gs_vstKeyQueueBuffer[KEY_MAXQUEUECOUNT];
 
 // table for converting scan code to ASCII code
 static KEYMAPPINGENTRY gs_vstKeyMappingTable[ KEY_MAPPINGTABLEMAXCOUNT ] =
@@ -302,7 +354,7 @@ static KEYMAPPINGENTRY gs_vstKeyMappingTable[ KEY_MAPPINGTABLEMAXCOUNT ] =
     /*  88  */  {   KEY_F12         ,   KEY_F12         }
 };
 
-// private function that check if scan code from keyboard is alphabet
+// function that check if scan code from keyboard is alphabet
 // params:
 //   bScanCode: byte code from keyboard
 // return:
@@ -317,7 +369,7 @@ BOOL kIsAlphabetScanCode(BYTE bScanCode) {
     return FALSE;
 }
 
-// private function that checks if scan code is number or symbol
+// function that checks if scan code is number or symbol
 // this function excludes number pad
 // params:
 //   bScanCode: byte code from keyboard
@@ -331,7 +383,7 @@ BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode) {
     return FALSE;
 }
 
-// private function that checks if scan code is number pad
+// function that checks if scan code is number pad
 // params:
 //   bScanCode: byte code from keyboard
 // return:
@@ -343,7 +395,7 @@ BOOL kIsNumberPadScanCode(BYTE bScanCode) {
     return FALSE;
 }
 
-// private function that checks if combined key value should be used
+// function that checks if combined key value should be used
 // ex) Shift + a = uppercase a = A
 // params:
 //   bScanCode: byte code from keyboard
@@ -394,7 +446,7 @@ BOOL kShouldUseCombinedCode(BYTE bScanCode) {
     return FALSE;
 }
 
-// private function that updates a global KeyboardManager structure that 
+// function that updates a global KeyboardManager structure that 
 // contains current keyboard state.
 // params:
 //   bScanCode: byte code from keyboard
@@ -442,7 +494,7 @@ void updateCombinationKeyStatusAndLED(BYTE bScanCode) {
     }
 }
 
-// public function that analyze scan code based on current keyboard state
+// function that analyze scan code based on current keyboard state
 // params:
 //   bScanCode: scan code from keyboard
 //   pbASCIICode: address where ascii code corresponding to the scan code is
@@ -516,4 +568,72 @@ BOOL kConvertScanCodeToASCIICode(
     updateCombinationKeyStatusAndLED(bScanCode);
 
     return TRUE;
+}
+
+
+// function that initializes keyboard buffer and activates
+// keyboard controller and keyboard
+// return:
+//   True if success. Otherwise False
+BOOL kInitializeKeyboard(void) {
+	// initialize queue
+	kInitializeQueue(
+        &gs_stKeyQueue,
+        gs_vstKeyQueueBuffer,
+        KEY_MAXQUEUECOUNT,
+		sizeof(KEYDATA)
+    );
+    // activate keyboard controller and keyboard 
+	return kActivateKeyboard();
+}
+
+// function that converts scan code to internal KeyData data structure
+// and pushs the KeyData struct to queue
+// params:
+//   bScanCode: scan code from keyboard
+// return:
+//   True if succeed. Otherwise, False
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode) {
+	KEYDATA stData;
+	BOOL bResult = FALSE;
+	BOOL bPreviousInterrupt;
+
+	stData.bScanCode = bScanCode;
+
+    BOOL converted = kConvertScanCodeToASCIICode(
+        bScanCode,
+        &(stData.bASCIICode),
+        &(stData.bFlags)
+    );  
+
+	if (converted) {
+		// disable interrupt
+		bPreviousInterrupt = kSetInterruptFlag(FALSE);
+		bResult = kPutQueue(&gs_stKeyQueue, &stData);
+		// restore previous interrupt
+		kSetInterruptFlag(bPreviousInterrupt);
+	}
+	return bResult;
+}
+
+// function that gets key data from keyboard buffer
+// params:
+//   pstData: pointer to variable will hold the data from the buffer
+// return:
+//   True if succeed. Otherwise, False
+BOOL kGetKeyFromKeyQueue(KEYDATA *pstData) {
+	BOOL bResult;
+	BOOL bPreviousInterrupt;
+
+	if (kIsQueueEmpty(&gs_stKeyQueue) == TRUE) {
+		return FALSE;
+	}
+
+	// disable Interrupt
+	bPreviousInterrupt = kSetInterruptFlag(FALSE);
+	// get data from queue
+	bResult = kGetQueue(&gs_stKeyQueue, pstData);
+	// restore interrupt state
+	kSetInterruptFlag(bPreviousInterrupt);
+	return bResult;
 }

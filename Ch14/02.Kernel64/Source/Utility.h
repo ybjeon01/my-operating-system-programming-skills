@@ -27,4 +27,14 @@ int kMemCpy(void *pvDestination, const void *pvSource, int iSize);
 //   iSize: size of data to compare
 int kMemCmp(const void *pvDestination, const void *pvSource, int iSize);
 
+
+/* Interrupt related functions */
+
+// enable or disable interrupt and return old interrupt state
+// params:
+//   bEnableInterupt: True to enable / False to disable
+// return:
+//   True if interrupt was enabled. Otherwise, False
+BOOL kSetInterruptFlag(BOOL bEnableInterrupt);
+
 #endif /* __UTILITY_H__ */
