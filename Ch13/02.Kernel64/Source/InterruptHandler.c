@@ -65,7 +65,7 @@ void kKeyboardHandler(int iVectorNumber) {
     // interrupt count
     vcBuffer[8] = '0' + g_iCommonInterruptCount;
     g_iCommonInterruptCount = (g_iCommonInterruptCount + 1) % 10;
-    kPrintString(70, 0, vcBuffer);
+    kPrintString(59, 0, vcBuffer);
 
     // send EOI to PIC controller
     // reason for iVectorNumber - PIC_IRQSTARTVECTOR is that
