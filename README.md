@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch12/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch13/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -391,3 +391,37 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
     4. 02.Kernel64/Source/Utility[.c, .h]
 
         * has memory-related utility functions: kMemCmp, kMemSet, kMemcpy
+
+
+* Ch13
+
+    * describe PIC that manages interrupts from device and how to use it
+    * describe more about context switch which is base of multi-tasking
+    
+    * summaries
+
+        * [13-1.md](Ch13/summary/13-1.md)
+        * [13-2.md](Ch13/summary/13-2.md)
+        * [13-3.md](Ch13/summary/13-3.md)
+
+    * [result image](Ch13/summary/assets/result.PNG)
+
+    1. ISR.[asm, h]
+
+        * interrupt functions that store and restore context for code in
+        flow and interrupt handler code
+
+    1. 02.Kernel64/Source/Descriptor.c
+
+        * gate descriptors reference functions in ISR.asm which calls
+        interrupt handler in C
+
+    2. 02.Kernel64/Source/[AssemblyUtility.asm, AssemblyUtility.h]
+
+        * has functions that enable and disable interrupt feature of CPU
+        * has function that reads Rflags
+
+    3. 02.Kernel64/Source/Main.c
+
+        * initialize PIC and print what interrupt happens at the top right
+        corner
