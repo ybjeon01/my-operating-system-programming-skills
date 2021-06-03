@@ -2,8 +2,14 @@
 
 SECTION .text
 
-; exported functions to other code
-global kInPortByte, kOutPortByte, kLoadGDTR, kLoadTR, kLoadIDTR
+; I/O port related functions
+global kInPortByte, kOutPortByte
+
+; GDT, IDT, and TSS related functions
+global kLoadGDTR, kLoadTR, kLoadIDTR
+
+; interrupt related functions
+global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 
 
 ;; I/O port related functions
@@ -63,5 +69,24 @@ kLoadTR:
 ;   qwIDTRAddress: address of IDTR
 kLoadIDTR:
     lidt [rdi]
+    ret
+
+
+;; interrupt related functions
+
+; function that activates interrupt
+kEnableInterrupt:
+    sti
+    ret
+
+; function that deactivates interrupt
+kDisableInterrupt:
+    cli
+    ret
+
+; function that returns RFLAGS
+kReadRFLAGS:
+    pushfq   ; push RFLAGS to stack
+    pop rax
     ret
 

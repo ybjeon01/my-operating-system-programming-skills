@@ -37,4 +37,18 @@ void kLoadTR(WORD wTSSSegmentOffset);
 //   qwIDTRAddress: address of IDTR
 void kLoadIDTR(QWORD qwIDTRAddress);
 
+
+/* interrupt related functions */
+
+// function that activates interrupt
+void kEnableInterrupt(void);
+
+// function that deactivates interrupt
+void kDisableInterrupt(void);
+
+// function that returns RFLAGS
+// return:
+//   Rflags of 64 bit size
+QWORD kReadRFLAGS(void);
+
 #endif /* __ASSEMBLYUTILITY_H__ */

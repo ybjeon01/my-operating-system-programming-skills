@@ -2,6 +2,7 @@
 #include "Keyboard.h"
 #include "Descriptor.h"
 #include "AssemblyUtility.h"
+#include "PIC.h"
 
 void kPrintString(int iX, int iY, const char *pcString);
 
@@ -47,7 +48,20 @@ void Main(void) {
         while (1);
     }
 
-    // simple shell
+
+    /* Initialize PIC controller */
+
+    kPrintString(0, 16, "PIC Controller And Interrupt Initialize.....[    ]");
+    kInitializePIC();
+    // unmask all interrupts
+    kMaskPICInterrupt(0);
+    // interrupt was deactivated in 01.Kernel32/EntryPoint.s 
+    kEnableInterrupt();
+    kPrintString(45, 16, "Pass");    
+
+
+    /* very simple shell */
+
     char vcTemp[2] = {0, };
     BYTE bFlags;
     BYTE bTemp;
@@ -61,7 +75,7 @@ void Main(void) {
                 // print only when key is pressed. In other word,
                 // do not print when key is released
                 if (bFlags & KEY_FLAGS_DOWN) {
-                    kPrintString(i++, 16, vcTemp);
+                    kPrintString(i++, 17, vcTemp);
 
                     // cause zero division exception to test that
                     // interrupt-related code is working 
