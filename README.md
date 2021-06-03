@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch13/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch14/summary/assets/result.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -411,17 +411,51 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
         * interrupt functions that store and restore context for code in
         flow and interrupt handler code
 
-    1. 02.Kernel64/Source/Descriptor.c
+    2. 02.Kernel64/Source/Descriptor.c
 
         * gate descriptors reference functions in ISR.asm which calls
         interrupt handler in C
 
-    2. 02.Kernel64/Source/[AssemblyUtility.asm, AssemblyUtility.h]
+    3. 02.Kernel64/Source/[AssemblyUtility.asm, AssemblyUtility.h]
 
         * has functions that enable and disable interrupt feature of CPU
         * has function that reads Rflags
 
-    3. 02.Kernel64/Source/Main.c
+    4. 02.Kernel64/Source/Main.c
 
         * initialize PIC and print what interrupt happens at the top right
         corner
+
+* Ch14
+
+    * describe generic type circular array queue
+    * apply the queue as keyboard buffer, so code does not access controller
+    every time it needs character
+    * describe why interrupt and context switch can be problematic when
+    a object is shared between codes or processes
+    
+    * summaries
+
+        * [14-1.md](Ch14/summary/14-1.md)
+        * [14-2.md](Ch14/summary/14-2.md)
+
+    * [result image](Ch14/summary/assets/result.PNG)
+
+    1. 02.Kernel64/Source/Queue.[c, h]
+
+        * has implementation of generic type circular array queue
+
+    2. 02.Kernel64/Source/Keyboard.[c, h] 
+
+        * utilizes keyboard queue buffer
+
+        * blocks interrupts while working with queue or PS/2 controller
+        to prevent handlers from polluting the shared objects
+
+    3. 02.Kernel64/Source/InterruptHandler.c
+
+        * get scan code from controller and put it to keyboard queue
+
+    4. 02.Kernel64/Source/Main.c
+
+        * use different method that gets key from keyboard buffer
