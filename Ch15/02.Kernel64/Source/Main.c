@@ -2,13 +2,26 @@
 #include "Keyboard.h"
 #include "Descriptor.h"
 #include "AssemblyUtility.h"
+#include "Utility.h"
 #include "PIC.h"
+#include "Console.h"
+#include "ConsoleShell.h"
 
-void kPrintString(int iX, int iY, const char *pcString);
 
 void Main(void) {
-    kPrintString(0, 10, "Switch To IA-32e Mode Success~!!");
-    kPrintString(0, 11, "IA-32e C Language Kernel Start............. [PASS]");
+    /* Initialize Console Shell */
+    int iCursorX, iCursorY;
+    kInitializeConsole(0, 10);
+
+
+    /* IA-32e mode success messages */
+
+    kPrintf("Switch To IA-32e Mode Success~!!\n");
+    kPrintf("IA-32e C Language Kernel Start............. [Pass]\n");
+    
+    /* Console success message */
+
+    kPrintf("Initialize Console..........................[Pass]\n");
 
 
     /* 
@@ -17,91 +30,61 @@ void Main(void) {
      * TSS descriptor is for offering stack to interrupt handler
      */ 
 
-    kPrintString(0, 12, "GDT Switch For IA-32e Mode..................[    ]");
+    kGetCursor(&iCursorX, &iCursorY);
+    kPrintf("GDT Switch For IA-32e Mode..................[    ]");
     kInitializeGDTTableAndTSS();
     kLoadGDTR(GDTR_STARTADDRESS);
-    kPrintString(45, 12, "Pass");
+    kSetCursor(45, iCursorY++);
+    kPrintf("Pass\n");
 
-    kPrintString(0, 13, "TSS Segment Load............................[    ]");
+    kPrintf("TSS Segment Load............................[    ]");
     kLoadTR(GDT_TSSSEGMENT);
-    kPrintString(45, 13, "PASS");
+    kSetCursor(45, iCursorY++);
+    kPrintf("PASS\n");
 
-    kPrintString(0, 14, "IDT Initialization..........................[    ]");
+    kPrintf("IDT Initialization..........................[    ]");
     kInitializeIDTTables();
     kLoadIDTR(IDTR_STARTADDRESS);
-    kPrintString(45, 14, "PASS");
+    kSetCursor(45, iCursorY++);
+    kPrintf("PASS\n");
+
+
+    /* check total ram size of the computer */
+    kPrintf("Total RAM Size Check........................[    ]");
+    kCheckTotalRAMSize();
+    kSetCursor(45, iCursorY++);
+    kPrintf("Pass], Size = %d MB\n", kGetTotalRAMSize());
 
 
     /* Activate Keyboard and initialize keyboard buffer */
 
-    kPrintString(0, 15, "Keyboard Activate And Queue Initialize......[    ]");
+    kPrintf("Keyboard Activate And Queue Initialize......[    ]");
 
     if (kInitializeKeyboard()) {
-        kPrintString(45, 15, "Pass");
+        kSetCursor(45, iCursorY++);
+        kPrintf("Pass\n");
         // set Num Lock, Caps Lock, Scroll Lock off
         kChangeKeyboardLED(FALSE, FALSE, FALSE);
     }
     else {
-        kPrintString(45, 15, "Fail");
+        kSetCursor(45, iCursorY++);
+        kPrintf("Fail\n");
         while (1);
     }
 
 
     /* Initialize PIC controller */
 
-    kPrintString(0, 16, "PIC Controller And Interrupt Initialize.....[    ]");
+    kPrintf("PIC Controller And Interrupt Initialize.....[    ]");
     kInitializePIC();
     // unmask all interrupts
     kMaskPICInterrupt(0);
     // interrupt was deactivated in 01.Kernel32/EntryPoint.s 
     kEnableInterrupt();
-    kPrintString(45, 16, "Pass");    
+    kSetCursor(45, iCursorY++);
+    kPrintf("Pass\n\n");    
 
 
-    /* very simple shell */
-
-    char vcTemp[2] = {0, };
-    BYTE bFlags;
-    BYTE bTemp;
-    int i = 0;
-    // struct that contains scan code, ascii code, and keyboard state
-    KEYDATA stData;
-
-    while (TRUE) {
-        if (kGetKeyFromKeyQueue(&stData)) {
-            if (stData.bFlags & KEY_FLAGS_DOWN) {
-                vcTemp[0] = stData.bASCIICode;
-                kPrintString(i++, 17, vcTemp);
-
-                // cause zero division exception to test that
-                // interrupt-related code is working 
-                if (vcTemp[0] == '0') {
-                        bTemp = bTemp / 0;
-                }
-            }
-        }
-    }
-}
-
-
-// write string to specific addr which is used for text mode, so you can
-// see string in screen.
-// iX: row where string will be
-//     possible range: [0~24]
-// iY: column where string will be
-//     possible range: [0~79]
-// string: string to write in screen
-// 
-// if string overflows iY, it wll be written to next line
-// There is no protection for memory overflow. This means if your string
-// overflows iX, the string can be written to Kernel area in worst case
-void kPrintString(int iX, int iY, const char *pcString) {
-    CHARACTER *pstScreen = (CHARACTER *) 0xB8000;
-    int i;
-
-    pstScreen += iY * 80 + iX;
-
-    for (i = 0; pcString[i] != 0; i++) {
-        pstScreen[i].bCharacter = pcString[i];
-    }
+    /* simple shell */
+        kStartConsoleShell();
 }

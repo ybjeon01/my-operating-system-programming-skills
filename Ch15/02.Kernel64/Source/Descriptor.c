@@ -562,16 +562,3 @@ void kSetIDTEntry(
     pstEntry->dwUpperBaseAddress = (QWORD) pvHandler >> 32;
     pstEntry->dwReserved = 0;
 }
-
-// declaration of kPrintString. This function declaration is just for 
-// interrupt test.
-void kPrintString(int iX, int iY, const char *pcString);
-
-// public and temporary handler for interrupt test
-void kDummyHandler(void) {
-    kPrintString(0, 17, "==================================================");
-    kPrintString(0, 18, "       Dummy Interrupt Handler Execute~!!!        ");
-    kPrintString(0, 19, "        Interrupt or Exception Occur~!!!!         ");
-
-    while (1);
-}
