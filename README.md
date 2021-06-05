@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch14/summary/assets/result.PNG)
+![capture of MINT64OS screen](Ch15/summary/assets/result4.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -429,8 +429,10 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 * Ch14
 
     * describe generic type circular array queue
+    
     * apply the queue as keyboard buffer, so code does not access controller
     every time it needs character
+    
     * describe why interrupt and context switch can be problematic when
     a object is shared between codes or processes
     
@@ -459,3 +461,45 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
     4. 02.Kernel64/Source/Main.c
 
         * use different method that gets key from keyboard buffer
+
+* Ch15
+
+    * describe C style variable argument list
+    
+    * describe how to implement string-related functions
+
+        1. printf, vsprintf, sprintf, atoi, itoa, strlen
+
+    * describe how shell is working
+    
+    * summaries
+
+        * [14-1.md](Ch14/summary/14-1.md)
+        * [14-2.md](Ch14/summary/14-2.md)
+
+    * [result image1](Ch15/summary/assets/result1.PNG)
+    * [result image2](Ch15/summary/assets/result2.PNG)
+    * [result image3](Ch15/summary/assets/result3.PNG)
+    * [result image4](Ch15/summary/assets/result4.PNG)
+    * [result image5 with wrong total ram size](Ch15/summary/assets/result5.PNG)
+
+    1. 02.Kernel64/Source/Console.[c, h]
+
+        * has console related functions
+
+    2. 02.Kernel64/Source/ConsoleShell.[c, h] 
+
+        * has shell function and commands for shell
+
+    3. 02.Kernel64/Source/Utility.[c, h]
+
+        * has string and memory related functions 
+
+    3. 02.Kernel64/Source/InterruptHandler.c
+
+        * use function in Console.c instead of kPrintString
+
+    4. 02.Kernel64/Source/Main.c
+
+        * use function in Console.c instead of kPrintString
+        * execute a simple shell
