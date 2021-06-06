@@ -2,6 +2,7 @@
 
 ![capture of MINT64OS screen](Ch15_sub1/summary/assets/result5.PNG)
 
+![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -15,7 +16,22 @@ code, I added English comments, so you can understand how it works. Also I
 modified code and added more features so it works in real and modern PC without
 problem   
 
-# To DO List
+# Videos
+
+1. [Ch4 in real computer](https://www.youtube.com/watch?v=0Lf-dNaZmwo)
+
+2. [Ch9 in real computer](https://www.youtube.com/watch?v=IdnCPOYaedQ)
+
+3. [CH10 in real computer](https://www.youtube.com/watch?v=ql7xM7M2JCw)
+
+4. [CH14 in QEMU](https://www.youtube.com/watch?v=UNmXIaIwEUA)
+
+5. [CH15_sub1 in real computer 1](https://www.youtube.com/watch?v=ZBIv6zvOMJQ)
+
+6. [CH15_sub1 in real computer 2](https://www.youtube.com/watch?v=7wx2FVJK7-A)
+
+
+# To Do List
 
 * implement task and add round-robin and multi-level queue schedulers
 
@@ -635,9 +651,9 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     
     * summaries
 
-        * [15sub1-1.md](Ch15_sub1/summary/15-1.md)
-        * [15sub1-2.md](Ch15_sub1/summary/15-2.md)
-        * [15sub1-3.md](Ch15_sub1/summary/15-3.md)
+        * [15_sub1-1.md](Ch15_sub1/summary/15_sub1-1.md)
+        * [15_sub1-2.md](Ch15_sub1/summary/15_sub1-2.md)
+        * [15_sub1-3.md](Ch15_sub1/summary/15_sub1-3.md)
 
     * [result image1](Ch15_sub1/summary/assets/result1.PNG)
     * [result image2](Ch15_sub1/summary/assets/result2.PNG)
