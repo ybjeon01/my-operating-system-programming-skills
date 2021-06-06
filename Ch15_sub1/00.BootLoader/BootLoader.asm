@@ -1,6 +1,3 @@
-; macro:
-;  FLOPPY144 : read sectors up to 18 instead of 36
-
 [ORG 0x00]
 [BITS 16]
 
@@ -34,6 +31,16 @@ START:
     mov ss, ax
     mov sp, 0xFFFE ; 0xFFFE is not mistake! this is for alignment
     mov bp, 0xFFFE
+
+    ; BIOS set dl to a drive that has this bootlader program
+    mov byte [BOOTDRIVE], dl
+
+    ; print message by using BIOS service. Some computers requires using BIOS
+    ; services before using video memory address. Otherwise, nothing is printed
+    ; on screen
+    mov si, MESSAGE1
+    call print
+
 
     ;; start of .CLEARSCREENLOOP
     mov si, 0 ; video memory addr index
@@ -71,10 +78,25 @@ START:
 RESETDISK:
     ; call BIOS reset function
     mov ax, 0 ; service num: 0 (reset)
-    mov dl, 0 ; drive num: 0 (floppy)
+    mov dl, byte [BOOTDRIVE] ; drive num: (floppy1=0x0, hdd1=0x80)
     int 0x13
 
     jc HANDLEDISKERROR
+
+; read drive maximum CHS
+READDISKPARAMTER:
+    mov ah, 0x08
+    mov dl, byte [BOOTDRIVE]
+    int 0x13
+    jc HANDLEDISKERROR
+
+    mov byte [LASTHEAD], dh
+    mov al, cl
+    add al, 0x3F
+
+    mov byte [LASTSECTOR], al
+    mov byte [LASTTRACK], ch
+
 
     ;; start of READDATA
 
@@ -101,7 +123,7 @@ READDATA:
     mov ch, byte [TRACKNUMBER]
     mov cl, byte [SECTORNUMBER]
     mov dh, byte [HEADNUMBER]
-    mov dl, 0x00                ; drive to read (0=Floppy)
+    mov dl, byte [BOOTDRIVE]    ; drive to read (0x0=Floppy1, 0x80=HDD1)
     int 0x13                    ; interrupt to execute service
 
     jc HANDLEDISKERROR    
@@ -110,29 +132,24 @@ READDATA:
     add si, 0x0020
     mov es, si
 
-    ; set sector, head, track numbers to next src_addr
-    ; floppy sector range: 1~18 in 1.44MB and 1~36 in 2.88MB
-    ; floppy head range: 0~1
-    ; floppy track(cylinder) range: 0~79
     mov al, byte [SECTORNUMBER]
     add al, 0x01
     mov byte [SECTORNUMBER], al
 
-    %if FLOPPY == 144
-        cmp al, 19 ; for 1.44MB
-    %elif FLOPPY == 288
-        cmp al, 37 ; for 2.88MB floppy which is default of QEMU
-    %else
-        %error "FLOPPY should be 144 or 288"
-    %endif
+    cmp al, byte [LASTSECTOR]
+    jbe READDATA
 
-    jl READDATA
-
-    xor byte [HEADNUMBER], 0x01
+    add byte [HEADNUMBER], 0x01
     mov byte [SECTORNUMBER], 0x01
-    cmp byte [HEADNUMBER], 0x00
-    jne READDATA
 
+
+    mov al, byte [LASTHEAD]
+    cmp byte [HEADNUMBER], al
+    ja .ADDTRACK
+    jmp READDATA
+
+.ADDTRACK:
+    mov byte [HEADNUMBER], 0x00
     add byte [TRACKNUMBER], 0x01
     jmp READDATA
 
@@ -221,6 +238,19 @@ PRINTMESSAGE:
     pop bp
     ret ; go back to calling address
 
+; print message by using BIOS service instead of video address
+print:
+    mov ah, 0Eh                       
+again1:
+    lodsb                             
+    or al, al                         
+    jz done1                         
+    int 10h                           
+    jmp again1                       
+done1:
+   ret  
+
+
 ;; Start of data section
 
 MESSAGE1: db 'Mint64 OS Boot Loader Start~!!', 0 ; welcome message
@@ -239,6 +269,36 @@ LOADINGCOMPLETEMESSAGE: db 'Complete~!!', 0
 SECTORNUMBER: db 0x02 ; os image starts from 0x02 sector
 HEADNUMBER: db 0x00
 TRACKNUMBER: db 0x00
+
+BOOTDRIVE: db 0x00
+LASTSECTOR: db 0x00
+LASTHEAD: db 0x00
+LASTTRACK: db 0x00
+
+;; Some BIOS requires USB to have valid partition entry information
+;; in MBR. I tested that a 2015 samsumg laptop does not require this info
+;; but a 2018 acer laptop requires this
+
+
+; Partition1 0x01BE  (i.e. first partition-entry begins from 0x01BE)
+; Partition2 0x01CE
+; Partition3 0x01DE
+; Partition4 0x01EE
+; We only fill/use Partition1
+TIMES 0x1BE-($-$$) DB 0
+db 0x80         ; Boot indicator flag (0x80 means bootable)
+db 0         ; Starting head
+db 3      ; Starting sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
+db 0         ; Starting cylinder (10 bits)
+db 0x8B         ; System ID   (0x8B means FAT32)
+db 0         ; Ending head
+db 100         ; Ending sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
+db 0         ; Ending cylinder (10 bits)
+dd 2      ; Relative sector (32 bits, start of partition)
+dd 97   ; Total sectors in partition (32 bits)
+; it's a dummy partition-entry (sectornumbers can't be zeros,
+; starting CHS and LBA values should be the same if converted to each other).
+
 
 ; add padding between above code and MBR signature
 times 510 - ($ - $$) db 0x00
