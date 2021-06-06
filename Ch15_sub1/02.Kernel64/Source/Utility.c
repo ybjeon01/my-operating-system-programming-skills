@@ -57,27 +57,15 @@ static QWORD gs_qwTotalRAMMBSize = 0;
 //   this function should called only once when computer boot
 //   other application must not call this function
 void kCheckTotalRAMSize(void) {
-    QWORD *pdwCurrentAddress;
-    QWORD dwPreviousValue;
-
-    pdwCurrentAddress = (QWORD *) 0x4000000;
-
-    // starts from 64MB (0x4000000) and check address that is multiply of 4MB
-    while (TRUE) {
-        dwPreviousValue = *pdwCurrentAddress;
-
-        *pdwCurrentAddress = 0x12345678;
-
-        // if the address does not exist, it does not have correct value
-        if (*pdwCurrentAddress != 0x12345678) {
-            break;
+    SMAP_entry_t *smap = (SMAP_entry_t *) SMAP_START_ADDRESS;
+    DWORD count = *(DWORD *) SMAP_COUNT_ADDRESS;
+    QWORD qwTotalRam = 0;
+    for (int i = 0; i < count; i++) {
+        if (smap[i].Type == 1) {
+            qwTotalRam += smap[i].Length;
         }
-
-        *pdwCurrentAddress = dwPreviousValue;
-        pdwCurrentAddress += (0x400000 / 8);
     }
-
-    gs_qwTotalRAMMBSize = (QWORD) pdwCurrentAddress / 0x100000;
+    gs_qwTotalRAMMBSize = qwTotalRam >> 20;
 }
 
 

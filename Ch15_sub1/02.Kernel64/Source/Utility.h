@@ -6,7 +6,19 @@
 #include "Types.h"
 
 
-/* memory related functions */
+/* memory related structures and functions */
+
+// entry of memory mapping returned by E820 bios service
+typedef struct SMAP_entry {
+    QWORD Base;
+    QWORD Length;
+    DWORD Type;   // 1: free, 2~4: non free 
+    DWORD ACPI;
+} SMAP_entry_t;
+
+#define SMAP_COUNT_ADDRESS 0x20000
+#define SMAP_START_ADDRESS 0x20004
+
 
 // function that initializes a region of memory space
 // params:
