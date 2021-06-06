@@ -3,9 +3,65 @@
 ![capture of MINT64OS screen](Ch15_sub1/summary/assets/result5.PNG)
 
 
-This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
-from just a simple bootloader to the complex GUI desktop environment 64 bits multi-core
-operating system
+This repository is for studying how operating system works. You can find my
+summary note in markdown format and source code. From the first chapter to the
+last chapter, you can test from just a simple bootloader to the complex GUI 
+desktop environment 64 bits multi-core operating system.
+
+The code I write here is based on a book, "Structures and Principles of 64 bit
+multi-core OS" written by a Korean author. You can find original MINT64OS
+code in this [repository](https://github.com/kkamagui). Unlike the original
+code, I added English comments, so you can understand how it works. Also I
+modified code and added more features so it works in real and modern PC without
+problem   
+
+# To DO List
+
+* implement task and add round-robin and multi-level queue schedulers
+
+* add multi-threading feature
+
+* add real number operation (FPU)
+
+* add Hard Disk driver and implement a simple file system(fat32)
+
+* add a feature: dynamic memory allocation
+
+* add functions offered by stdio.h and unistd.h
+
+* add RAM disk and cache feature to improve hard disk speed
+
+* extract CPU info and activate more than one cores (multi core)
+
+* implement a simple GUI desktop environment
+
+* add mouse driver (PS/2)
+
+* divide user level memory regions from kernel level memory regions 
+
+## Not in the book
+
+* add a simple audio driver
+
+* add ext2 file system
+
+* make the bootloader in C language with assembly
+
+* Instead of concatenating bootloader with kernel binary, let linker link
+both automatically.
+
+* Currently, Bootloader does too many things, use chain loading and let
+Kernel code load OS-related binary to memory
+
+* implement a network layer up to TCP/IP
+
+* make a simple http server
+
+* Instead of using BIOS, use UEFI
+
+* support ARM instruction set
+
+* add USB driver and usb mouse driver
 
 # Prerequisite for running OS
 
@@ -92,9 +148,27 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 # mode, connected USB-FDD, and tested my image
 ```
 
-### in Ch15_sub1
+## in Ch15_sub1
 
 In CH15_sub1, PC can boot OS from USB or HDD.
+
+
+### Ubuntu
+
+```Bash
+# go to a chapter directory where you want to compile
+
+# compile
+make all
+
+# run operating system in emulator
+make run
+
+# clean
+make clean
+```
+
+### Docker + Windows
 
 ```Bash
 # Inside Docker container
@@ -107,7 +181,7 @@ make all
 # open Powershell whose current directory is this repository directory
 qemu-system-x86_64.exe -m 64 -hda .\Disk.img -rtc base=localtime -M pc
 ```
-## In Real PC
+### In Real PC
 
 ```Bash
   
@@ -136,7 +210,8 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
 
     * Summary directory that contains note I wrote after reading a chapter
     
-    * Other directories are source code for OS. Directory name is self-explanatory
+    * Other directories are source code for OS. Directory name is
+    self-explanatory
 
         * Makefile that compiles source code in the directory
 
@@ -194,7 +269,8 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
 
     2. 00.Bootloader/Makefile
 
-        * accept Floppy option from root Makefile and pass it to assembly compiler
+        * accept Floppy option from root Makefile and pass it to assembly
+        compiler
 
     2. 01.Kernel32/VirtualOS.bin
 
@@ -212,7 +288,8 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
         * add option Floppy so you can test the image file with real computer
 
             1. Floppy=144 means the created image is for 1.44MB floppy disk
-            2. Floppy=288 means the created image is for 2.88MB floppy disk (default)
+            2. Floppy=288 means the created image is for 2.88MB floppy disk
+            (default)
 
 * Ch06
     * describe how to switch from real mode to protected mode 
@@ -236,7 +313,8 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     2. Makefile in root directory
 
         * remove VirtualOS part
-        * concatenate Bootloader.bin and EntryPoint.bin when making OS image file
+        * concatenate Bootloader.bin and EntryPoint.bin when making OS image
+        file
 
 * Ch07
 
@@ -260,7 +338,8 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
 
     1. 00.Bootloader/Bootloader.asm
 
-        * TOTALSECTORCOUNT constant, so ImageMaker can modify the value, and bootloader
+        * TOTALSECTORCOUNT constant, so ImageMaker can modify the value, and
+        bootloader
         can successfully load the whole os image to memory
 
     2. 01.Kernel32/Source/EntryPoint.s
