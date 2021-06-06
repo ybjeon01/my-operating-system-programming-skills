@@ -1,6 +1,6 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch15/summary/assets/result4.PNG)
+![capture of MINT64OS screen](Ch15_sub1/summary/assets/result5.PNG)
 
 
 This repository is for studying how operating system works. You can find my summary note in markdown format and source code. From the first chapter to the last chapter, you can test
@@ -90,6 +90,44 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 # In my case, I have a Acer Laptop made in 2018. Its BIOS allows to
 # emulate USB Floppy Drive as old Floppy Drive, so I changed UEFI to legacy
 # mode, connected USB-FDD, and tested my image
+```
+
+### in Ch15_sub1
+
+In CH15_sub1, PC can boot OS from USB or HDD.
+
+```Bash
+# Inside Docker container
+
+# go to a chapter directory where you want to compile
+
+# compile
+make all
+
+# open Powershell whose current directory is this repository directory
+qemu-system-x86_64.exe -m 64 -hda .\Disk.img -rtc base=localtime -M pc
+```
+## In Real PC
+
+```Bash
+  
+make  all
+
+# If you are running Windows, download dd command for Windows and copy OS
+# Image to a directory where dd command is
+
+sudo dd if=./Disk.img of=/dev/[your usb or hdd]
+
+# For Windows
+.\dd.exe of=[usb or hdd drive letter] if=Disk.img
+
+# Go to CMOS (BIOS setting)
+# If your BIOS is using UEFI, change it to legacy first and then
+# change your bootloader order so BIOS reads MBR from usb or hdd first
+
+# In my case, I have a Acer Laptop made in 2018. Its BIOS allows to
+# emulate USB HDD Drive as Hard Disk Drive, so I changed UEFI to legacy
+# mode, connected USB-HDD, and tested my image
 ```
 
 # Directory Structure
@@ -503,3 +541,60 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 
         * use function in Console.c instead of kPrintString
         * execute a simple shell
+
+* Ch15_sub1 (extra explanation and code not in the book)
+
+    * describes how to boot OS from USB or HDD instead of Floppy Disk
+    
+    * describes how to get available memory in the right way
+
+        1. use BIOS service that returns memory map
+
+    * has additional shell commands
+
+    * to execute in QEMU use `-hda` instead of `-fda`
+    
+    * summaries
+
+        * [15sub1-1.md](Ch15_sub1/summary/15-1.md)
+        * [15sub1-2.md](Ch15_sub1/summary/15-2.md)
+        * [15sub1-3.md](Ch15_sub1/summary/15-3.md)
+
+    * [result image1](Ch15_sub1/summary/assets/result1.PNG)
+    * [result image2](Ch15_sub1/summary/assets/result2.PNG)
+    * [result image3](Ch15_sub1/summary/assets/result3.PNG)
+    * [result image4 that access memory at 64GB](Ch15_sub1/summary/assets/result4.PNG)
+    * [result image5](Ch15_sub1/summary/assets/result5.PNG)
+
+    1. 00.Bootloader/Bootloader.asm
+
+        * ask BIOS to get drive information about CHS
+
+        * have partition entry in MBR section so some BIOSes
+        can boot from USB without problem
+
+        * Floppy macro is discarded
+
+    2. 01.Kernel32/Source/EntryPoint.s
+
+        * ask BIOS memory map and save it to 0x20000
+        so OS can check total ram memory
+
+    3. 02.Kernel64/Source/Utility.[c, h]
+
+        * calculate total ram size by reading memory map
+
+    3. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * three commands
+
+            * memorymap that reads memorymap
+
+            * access that tries to write and read memory at specific address
+
+            * banner that prints MINT64OS text in big size by combining small
+            letters
+
+    4. Makefile in root directory and 00.Bootloader/Makefile
+
+        * Floppy env variable is discarded
