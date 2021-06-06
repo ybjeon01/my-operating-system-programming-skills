@@ -112,6 +112,36 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer);
 //   kShutdown does have any parameters
 void kShutdown(const char *pcParamegerBuffer);
 
+
+// check if memory at specific address is readable and writable
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   parmater: address in hex (unit: byte) or address in decimal (unit: MB)
+//   this function actually tries to write data at address given by paramter
+//   If the area is hardware reserved, reboot might happen
+// example:
+//   access 0x12345
+//   access 1024
+void access(const char *pcParameterBuffer);
+
+
+// print computer memory map that shows hardware reserved area and
+// free area
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void printMemoryMap(const char *pcParameterBuffer);
+
+
+// print MINT64OS banner
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   banner does have any parameters
+void banner(const char *pcParameterBuffer);
+
 #endif /*__CONSOLESHELL_H__*/
 
 

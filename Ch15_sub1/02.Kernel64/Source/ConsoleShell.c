@@ -4,12 +4,16 @@
 #include "Keyboard.h"
 #include "Utility.h"
 
+
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
     {"help", "Show Help", kHelp},
     {"cls", "Clear Screen", kCls},
     {"totalram", "Show Total RAM Size", kShowTotalRAMSize},
     {"strtod", "String to Decimal/Hex Convert", kStringToDecimalHexTest},
     {"shutdown", "Shutdown And Reboot OS", kShutdown},
+    {"access", "write and access address", access},
+    {"memorymap", "get current memory map", printMemoryMap},
+    {"banner", "print MINT64OS banner", banner},
 };
 
 // main loop of shell
@@ -272,8 +276,129 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer) {
 //   kShutdown does have any parameters
 void kShutdown(const char *pcParameterBuffer) {
     kPrintf("System Shutdown Start...\n");
-    
     kPrintf("Press Any Key To Reboot PC...");
     kGetCh();
     kReboot();
+}
+
+
+// check if memory at specific address is readable and writable
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   parmater: address in hex (unit: byte) or address in decimal (unit: MB)
+//   this function actually tries to write data at address given by paramter
+//   If the area is hardware reserved, reboot might happen
+// example:
+//   access 0x12345
+//   access 1024
+void access(const char *pcParameterBuffer) {
+    char vcParameter[100];
+    PARAMETERLIST stList;
+    int iLength;
+
+    BYTE *bAddr;
+    BYTE bPrevValue;
+
+    // initialize paramter list
+    kInitializeParameter(&stList, pcParameterBuffer);
+    iLength = kGetNextParameter(&stList, vcParameter);
+
+    if (iLength == 0) {
+        kPrintf("Usage: access memory_address\n");
+        return;
+    }
+
+    if (kMemCmp(vcParameter, "0x", 2) == 0) {
+        bAddr = (BYTE *) (kAToI(&(vcParameter[2]), 16));
+    }
+    else {
+        bAddr = (BYTE *) (kAToI(vcParameter, 10) << 20);
+    }
+    
+    *bAddr = (BYTE) 0x1234;
+    if (*bAddr == (BYTE) 0x1234) {
+        kPrintf("exist\n");
+        *bAddr = bPrevValue;
+    }
+    else {
+        kPrintf("does not exist\n");
+    }
+}
+
+
+// print computer memory map that shows hardware reserved area and
+// free area
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void printMemoryMap(const char *pcParameterBuffer) {
+    SMAP_entry_t *smap = (SMAP_entry_t *) SMAP_START_ADDRESS;
+    DWORD count = *(DWORD *) SMAP_COUNT_ADDRESS;
+
+    char buffer[20];
+    int iMaxBaseLength = 0;
+    int iMaxRangeLength = 0;
+    int iLength = 0;
+
+    int iCursorX, iCursorY;
+
+    for (int i = 0; i < count; i++) {
+        iLength = kIToA(smap->Base, buffer, 16);
+        if (iLength > iMaxBaseLength) {
+            iMaxBaseLength = iLength;
+        }
+
+        iLength = kIToA(smap->Length, buffer, 16);
+        if (iLength > iMaxRangeLength) {
+            iMaxRangeLength = iLength;
+        }
+        smap += 1;
+    }
+
+    smap = (SMAP_entry_t *) SMAP_START_ADDRESS;
+    for (int i = 0; i < count; i++) {
+        kGetCursor(&iCursorX, &iCursorY);
+        iLength = kIToA(smap->Base, buffer, 16);
+        kSetCursor(iMaxBaseLength - iLength, iCursorY);
+        kPrintf("%p", smap->Base);
+
+        kGetCursor(&iCursorX, &iCursorY);
+        iLength = kIToA(smap->Length, buffer, 16);
+        kSetCursor(iCursorX + 3 + iMaxRangeLength - iLength, iCursorY);
+        kPrintf("%p", smap->Length);
+
+        kPrintf("   %d\n", smap->Type);
+        smap += 1;
+
+        if (i % 24 == 0 && i != 0) {
+            kGetCursor(&iCursorX, &iCursorY);
+            kPrintf("press any key to continue...");
+            kGetCh();
+            kSetCursor(iCursorX, iCursorY);
+            kPrintf("                            ");
+            kSetCursor(iCursorX, iCursorY);
+        }
+    }
+}
+
+
+// print MINT64OS banner
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   banner does have any parameters
+void banner(const char *pcParameterBuffer) {
+    const char *banner = \
+        "888b     d888 8888888 888b    888 88888888888 .d8888b.      d8888\n" \
+        "8888b   d8888   888   8888b   888     888    d88P  Y88b    d8P888\n" \
+        "88888b.d88888   888   88888b  888     888    888          d8P 888\n" \
+        "888Y88888P888   888   888Y88b 888     888    888d888b.   d8P  888\n" \
+        "888 Y888P 888   888   888 Y88b888     888    888P  Y88b d88   888\n" \
+        "888  Y8P  888   888   888  Y88888     888    888    888 8888888888\n"\
+        "888       888   888   888   Y8888     888    Y88b  d88P       888\n" \
+        "888       888 8888888 888    Y888     888     Y8888PP         888\n"; 
+
+    kPrintf(banner);
 }
