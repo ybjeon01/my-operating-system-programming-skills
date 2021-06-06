@@ -1,8 +1,3 @@
-# options:
-#  FLOPPY: decide where the os image will reside between 1.44 and 2.88 floppies
-#    possible values: [144, 288]
-
-
 .PHONY: all clean run
 
 all: Utility BootLoader Kernel32 Kernel64 Disk.img
