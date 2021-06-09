@@ -59,6 +59,10 @@ void kGetCursor(int *piX, int *piY) {
 //   %x, %X: 4bytes integer without sign (print in hex)
 //   %q, %Q: 8bytes integer without sign (print in hex)
 //   %p: same as %q, %Q
+//
+//  overall length of string should be less than 1024 bytes
+//  otherwise, unpredictable result that harms the system can
+//  happens
 void kPrintf(const char *pcFormatString, ...) {
     va_list ap;
     char vcBuffer[1024];
