@@ -51,4 +51,13 @@ void kDisableInterrupt(void);
 //   Rflags of 64 bit size
 QWORD kReadRFLAGS(void);
 
+
+/* time stamp counter related functions */
+
+// function that returns time stamp counter
+// return:
+//   time stamp counter
+QWORD kReadTSC(void);
+
+
 #endif /* __ASSEMBLYUTILITY_H__ */

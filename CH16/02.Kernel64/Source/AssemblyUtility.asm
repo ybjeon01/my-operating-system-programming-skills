@@ -11,6 +11,9 @@ global kLoadGDTR, kLoadTR, kLoadIDTR
 ; interrupt related functions
 global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 
+;Time Stamp Counter related functions
+global kReadTSC
+
 
 ;; I/O port related functions
 
@@ -90,3 +93,18 @@ kReadRFLAGS:
     pop rax
     ret
 
+
+;; Time Stamp Counter related functions
+
+; returns time stamp counter
+; return:
+;   rax: time stamp counter of QWORD size 
+kReadTSC:
+    push rdx;
+    rdtsc       ; save tsc at EDX:EAX (high:low)
+
+    shl rdx, 32 ; save tsc at RAX 
+    or rax, rdx
+
+    pop rdx
+    ret 
