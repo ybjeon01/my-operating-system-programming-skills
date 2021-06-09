@@ -1,8 +1,8 @@
 # my-operating-system-programming-skills
 
-![capture of MINT64OS screen](Ch15_sub1/summary/assets/result5.PNG)
+![capture of MINT64OS screen](Ch16/summary/assets/result1.PNG)
 
-![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
+![capture of MINT64OS in real computer](Ch16/summary/assets/result2.jpg)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -164,9 +164,9 @@ sudo dd if=./Disk.img of=/dev/fd0 bs=1440k count=1
 # mode, connected USB-FDD, and tested my image
 ```
 
-## in Ch15_sub1
+## from Ch15_sub1
 
-In CH15_sub1, PC can boot OS from USB or HDD.
+from CH15_sub1, PC can boot OS from USB or HDD.
 
 
 ### Ubuntu
@@ -417,8 +417,7 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
 
 * Ch10
 
-    * describe paging, a memory management feature
-    * explains how to prepare to use the feature
+    * describe how to switch from protected mode to long mode
     
     * summaries
 
@@ -693,3 +692,32 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     4. Makefile in root directory and 00.Bootloader/Makefile
 
         * Floppy env variable is discarded
+
+
+* Ch16
+
+    * describes PIT, RTC, and TSC which are related to time
+    
+    * summaries
+
+        * [16-1.md](Ch16/summary/16-1.md)
+        * [16-2.md](Ch16/summary/16-2.md)
+
+    * [result image1](Ch16/summary/assets/result1.PNG)
+    * [result image2 in real pc](Ch16/summary/assets/result2.jpg)
+
+    1. 02.Kernel64/Sources/PIT.[h, c]
+
+        * add functions that uses programable interval timer
+
+    2. 02.Kernel64/Sources/AssemblyUtility.[h, asm]
+
+        * add function that read time stamp counter
+
+    3. 02.Kernel64/Sources/RTC.[h, c]
+
+        * add functions that read current date and time
+
+    4. 02.Kernel64/Sources/ConsoleShell.[h, c]
+
+        * add shell commands that utilizes above files
