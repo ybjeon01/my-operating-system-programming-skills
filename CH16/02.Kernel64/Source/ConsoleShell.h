@@ -113,6 +113,53 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer);
 void kShutdown(const char *pcParamegerBuffer);
 
 
+// set timer using PIT counter0 register
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+//     time: counter reset value in ms unit
+//     periodic: boolean value to decide repeat
+//       1: true
+//       0: false
+void kSetTimer(const char *pcParameterBuffer);
+
+
+// busy-wait for a period by using PIT controller
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+//     time: counter reset value in ms unit
+//     periodic: boolean value to decide repeat
+//       1: true
+//       0: false
+void kWaitUsingPIT(const char *pcParameterBuffer);
+
+
+// read time stamp counter
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kReadTimeStampCounter(const char *pcParameterBuffer);
+
+
+// measure processor maximum clock for 10 seconds
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kMeasureProcessorSpeed(const char *pcParameterBuffer);
+
+
+// print date and time stored in RTC controller
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kShowDateAndTime(const char *pcParameterBuffer);
+
+
+/* custom shell commands */
+
+
 // check if memory at specific address is readable and writable
 // params:
 //   pcCommandBuffer: parameters passed to command by shell

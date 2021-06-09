@@ -3,17 +3,81 @@
 #include "Console.h"
 #include "Keyboard.h"
 #include "Utility.h"
+#include "AssemblyUtility.h"
+#include "PIT.h"
+#include "RTC.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
-    {"help", "Show Help", kHelp},
-    {"cls", "Clear Screen", kCls},
-    {"totalram", "Show Total RAM Size", kShowTotalRAMSize},
-    {"strtod", "String to Decimal/Hex Convert", kStringToDecimalHexTest},
-    {"shutdown", "Shutdown And Reboot OS", kShutdown},
-    {"access", "write and access address", access},
-    {"memorymap", "get current memory map", printMemoryMap},
-    {"banner", "print MINT64OS banner", banner},
+    {
+        "help",
+        "Show Help",
+        kHelp
+    },
+    {
+        "cls",
+        "Clear Screen",
+        kCls
+    },
+    {
+        "totalram",
+        "Show Total RAM Size",
+        kShowTotalRAMSize
+    },
+    {
+        "strtod",
+        "String to Decimal/Hex Convert",
+        kStringToDecimalHexTest
+    },
+    {
+        "shutdown",
+        "Shutdown And Reboot OS",
+        kShutdown
+    },
+    {
+        "settimer",
+        "Set PIT Controller Counter0 ex)settimer 10(ms) 1(periodic)",
+        kSetTimer
+    },
+    {
+        "wait",
+        "Wait ms Using PIT, ex)wait 100(ms)",
+        kWaitUsingPIT
+    },
+    {
+        "rdtsc",
+        "Read Time Stamp Counter",
+        kReadTimeStampCounter
+    },
+    {
+        "cpuspeed",
+        "Measure Processor Speed",
+        kMeasureProcessorSpeed
+    },
+    {
+        "date",
+        "Show Date And Time",
+        kShowDateAndTime
+    },
+
+
+    /* custom shell commands */
+    
+    {
+        "access",
+        "write and access address",
+        access
+    },
+    {
+        "memorymap",
+        "get current memory map",
+        printMemoryMap
+    },
+    {
+        "banner",
+        "print MINT64OS banner",
+        banner
+    },
 };
 
 // main loop of shell
@@ -281,6 +345,151 @@ void kShutdown(const char *pcParameterBuffer) {
     kReboot();
 }
 
+
+// set timer using PIT counter0 register
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+//     time: counter reset value in ms unit
+//     periodic: boolean value to decide repeat
+//       1: true
+//       0: false
+void kSetTimer(const char *pcParameterBuffer) {
+    char vcParameter[100];
+    PARAMETERLIST stList;
+    long lValue;
+    BOOL bPeriodic;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+    
+    if (kGetNextParameter(&stList, vcParameter) == 0) {
+        kPrintf("ex)settimer 10(ms) 1(periodic)\n");
+        return;
+    }
+    lValue = kAToI(vcParameter, 10);
+
+    if (kGetNextParameter(&stList, vcParameter) == 0) {
+        kPrintf("ex)settimer 10(ms) 1(periodic)\n");
+        return;
+    }
+    bPeriodic = (BOOL) kAToI(vcParameter, 10);
+
+    kInitializePIT(MSTOCOUNT(lValue), bPeriodic);
+    kPrintf("Time = %d ms, Periodic = %d Change Complete\n", lValue, bPeriodic);
+}
+
+
+// busy-wait for a period by using PIT controller
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+//     time: counter reset value in ms unit
+//     periodic: boolean value to decide repeat
+//       1: true
+//       0: false
+void kWaitUsingPIT(const char *pcParameterBuffer) {
+    char vcParameter[100];
+    int iLength;
+    PARAMETERLIST stList;
+    long lMillisecond;
+    int i;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+    
+    if (kGetNextParameter(&stList, vcParameter) == 0) {
+        kPrintf("ex)wait 100(ms)\n");
+        return;
+    }
+    lMillisecond = kAToI(vcParameter, 10);
+    kPrintf("%d ms Sleep Start...\n", lMillisecond);
+
+    // disable interrupt, so other tasks does not use PIT
+    kDisableInterrupt();
+
+    // iteration is because PIT does not support big number for timer
+    for (i = 0; i < lMillisecond / 30; i++) {
+        kWaitUsingDirectPIT(MSTOCOUNT(30));
+    }
+    kWaitUsingDirectPIT(MSTOCOUNT(lMillisecond % 30));
+
+    kEnableInterrupt();
+    kPrintf("%d Sleep Complete\n", lMillisecond);
+    
+    // restore prev PIT
+    kInitializePIT(MSTOCOUNT(1), TRUE);
+}
+
+
+// read time stamp counter
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kReadTimeStampCounter(const char *pcParameterBuffer) {
+    QWORD qwTSC = kReadTSC();
+    kPrintf("Time Stamp Counter = %q\n", qwTSC);
+}
+
+
+// measure processor maximum clock for 10 seconds
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kMeasureProcessorSpeed(const char *pcParmeterBuffer) {
+    int i;
+    QWORD qwLastTSC, qwTotalTSC = 0;
+
+    kPrintf("Now Measuring.");
+
+    // disable interrupt, so other tasks does not use PIT
+    kDisableInterrupt();
+
+    // measure processor speed for 10 seconds
+    for (i = 0; i < 200; i++) {
+        qwLastTSC = kReadTSC();
+        kWaitUsingDirectPIT(MSTOCOUNT(50));
+        qwTotalTSC += kReadTSC() - qwLastTSC;
+
+        kPrintf(".");
+    }
+
+    // restore PIT
+    kInitializePIT(MSTOCOUNT(1), TRUE);
+    kEnableInterrupt();
+
+    kPrintf("\nCPU Speed = %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
+}
+
+
+// print date and time stored in RTC controller
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kShowDateAndTime(const char *pcParameterBuffer) {
+    BYTE bSecond, bMinute, bHour;
+    BYTE bDayOfWeek, bDayOfMonth, bMonth;
+    WORD wYear;
+
+    kReadRTCTime(&bHour, &bMinute, &bSecond);
+    kReadRTCDate(&wYear, &bMonth, &bDayOfMonth, &bDayOfWeek);
+
+    kPrintf(
+        "Date: %d/%d/%d %s, ",
+        wYear,
+        bMonth,
+        bDayOfMonth,
+        kConvertDayOfWeekToString(bDayOfWeek)
+    );
+    kPrintf(
+        "Time: %d:%d:%d\n",
+        bHour,
+        bMinute,
+        bSecond
+    );
+}
+
+
+/* custom shell commands */
 
 // check if memory at specific address is readable and writable
 // params:
