@@ -512,7 +512,7 @@ void kTestTask(void) {
     while (TRUE) {
         kPrintf(
             "[%d] This message is from kTestTask. Press any key to switch to"
-            "kConsoleShell~!!\n", 
+            " kConsoleShell~!!\n", 
         i++
         );
 
@@ -544,8 +544,8 @@ void kCreateTestTask(const char *pcParameterBuffer) {
     // if user hits 'q' letter, quit the shell
     while (TRUE) {
         kPrintf(
-            "[%d] This message from kConsoleShell. Press q to finish the command"
-            "or other keys to switch to test task\n",
+            "[%d] This message from kConsoleShell. Press q to finish the"
+            " command or other keys to switch to test task\n",
             i++
         );
         if (kGetCh() == 'q') {
