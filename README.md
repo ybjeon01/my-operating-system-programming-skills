@@ -721,3 +721,31 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     4. 02.Kernel64/Sources/ConsoleShell.[h, c]
 
         * add shell commands that utilizes above files
+
+
+* Ch17
+
+    * describe concept of multitasking, task and context switch
+    
+    * implement a very simple task structure which will be utilized in
+    multitasking preemptive system
+    
+    * summaries
+
+        * [17-1.md](Ch17/summary/17-1.md)
+
+    * [result image1](Ch17/summary/assets/result1.PNG)
+    * [result image2 in real pc](Ch17/summary/assets/result2.jpg)
+
+    1. 02.Kernel64/Sources/Task.[h, c]
+
+        * implement simple task structure that stores cpu registers
+
+    2. 02.Kernel64/Sources/AssemblyUtility.[h, asm]
+
+        * add context switch function which cannot be implemented in C language 
+
+    3. 02.Kernel64/Sources/ConsoleShell.[h, c]
+
+        * add a shell command that creates a test task and switch context
+        from shell to the task
