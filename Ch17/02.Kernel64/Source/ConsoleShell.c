@@ -6,6 +6,7 @@
 #include "AssemblyUtility.h"
 #include "PIT.h"
 #include "RTC.h"
+#include "Task.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
@@ -58,6 +59,11 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "date",
         "Show Date And Time",
         kShowDateAndTime
+    },
+    {
+        "createtask",
+        "Create a test task",
+        kCreateTestTask
     },
 
 
@@ -486,6 +492,71 @@ void kShowDateAndTime(const char *pcParameterBuffer) {
         bMinute,
         bSecond
     );
+}
+
+
+/* task related arrays and shell commands */
+
+// first task is this console shell
+// second task is a simple task that just prints a message
+static TCB gs_vstTask[2] = {0, };
+
+// a stack for the simple task
+static QWORD gs_vstStack[1024] = {0, };
+
+
+// a simple test task that switches between test tasks
+// this is just a function called by another console shell command
+void kTestTask(void) {
+    int i = 0;
+    while (TRUE) {
+        kPrintf(
+            "[%d] This message is from kTestTask. Press any key to switch to"
+            "kConsoleShell~!!\n", 
+        i++
+        );
+
+        kGetCh();
+        kSwitchContext(&(gs_vstTask[1].stContext), &(gs_vstTask[0].stContext));
+    }
+}
+
+
+// create a simple task and switch to the task until user presses a key, 'q'
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kCreateTestTask(const char *pcParameterBuffer) {
+    KEYDATA stData;
+    int i = 0;
+
+    // create a TCB for a test task
+    kSetUpTask(
+        &(gs_vstTask[1]),
+        1,
+        0,
+        (QWORD) kTestTask,
+        (void *) gs_vstStack,
+        sizeof(gs_vstStack)
+    );
+
+    // if user hits 'q' letter, quit the shell
+    while (TRUE) {
+        kPrintf(
+            "[%d] This message from kConsoleShell. Press q to finish the command"
+            "or other keys to switch to test task\n",
+            i++
+        );
+        if (kGetCh() == 'q') {
+            break;
+        }
+
+        // it does not need to create TCB for console shell
+        // because first call of kSwitchContext saves all the context
+        // to TCB for console shell
+        kSwitchContext(&(gs_vstTask[0].stContext), &(gs_vstTask[1].stContext));
+    }
 }
 
 

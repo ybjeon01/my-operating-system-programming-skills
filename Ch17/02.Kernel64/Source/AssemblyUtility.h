@@ -2,7 +2,7 @@
 #define __ASSEMBLYUTILITY_H__
 
 #include "Types.h"
-
+#include "Task.h"
 
 /* I/O port related functions */
 
@@ -58,6 +58,22 @@ QWORD kReadRFLAGS(void);
 // return:
 //   time stamp counter
 QWORD kReadTSC(void);
+
+
+/* context switch related functions */
+
+// save current task context to task data structure
+// and load next task context to run
+// params:
+//   pstCurrentContext: pointer where current context will be stored
+//   pstNextContext: pointer to context to load
+// info:
+//   this looks like a function. However, it works slight different way.
+//   this code must be called, but it never returns. and it preserves
+//   registers instead of pushing to stack, so it can store the registers
+//   of the task
+void kSwitchContext(CONTEXT *pstCurrentContext, CONTEXT *pstNextContext);
+
 
 
 #endif /* __ASSEMBLYUTILITY_H__ */

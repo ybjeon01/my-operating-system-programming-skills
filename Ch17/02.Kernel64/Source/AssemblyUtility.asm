@@ -14,6 +14,8 @@ global kEnableInterrupt, kDisableInterrupt, kReadRFLAGS
 ;Time Stamp Counter related functions
 global kReadTSC
 
+; context switch related function
+global kSwitchContext
 
 ;; I/O port related functions
 
@@ -107,4 +109,140 @@ kReadTSC:
     or rax, rdx
 
     pop rdx
-    ret 
+    ret
+
+
+;; context switch related macros and functions
+
+
+; macro that stores registers to task CONTEXT array
+; it is required to set CONTEXT array as stack
+; and push SS, RSP, RFLAGS, CS, RIP first before
+; using this macro
+; you can see similar macro in ISR.asm
+%macro KSAVECONTEXT 0
+    push rbp
+    push rax
+    push rbx
+    push rcx
+    push rdx
+    push rdi
+    push rsi
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+    push r13
+    push r14
+    push r15
+    
+    mov ax, ds
+    push rax
+    mov ax, es
+    push rax
+    push fs
+    push gs 
+%endmacro
+
+
+; macro that restore registers to task CONTEXT array
+; it is required to set CONTEXT array as stack
+; and the array shoud have registers pushed by
+; KSAVECONTEXT macro
+; you can see similar macro in ISR.asm
+%macro KLOADCONTEXT 0
+    pop gs
+    pop fs
+    pop rax
+    mov es, ax
+    pop rax
+    mov ds, ax
+    
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+    pop rsi
+    pop rdi
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+    pop rbp        
+%endmacro
+
+
+; save current task context to task data structure
+; and load next task context to run
+; params:
+;   pstCurrentContext: pointer where current context will be stored
+;   pstNextContext: pointer to context to load
+; info:
+;   this looks like a function. However, it works slight different way.
+;   this code must be called, but it never returns. and it preserves
+;   registers instead of pushing to stack, so it can store the registers
+;   of the task
+kSwitchContext:
+    push rbp
+    mov rbp, rsp    ; use rbp as a base to point return address
+
+    pushfq      ; cmp can modify RFLAGS, so push it before cmp
+    cmp rdi, 0
+    je .LoadContext ; if pstCurrentContet is empty
+    popfq
+
+
+    ;; save current task context
+
+    push rax    ; rax reigster is used as temp variable
+    
+    mov ax, ss
+    mov qword [rdi + (23 * 8)], rax
+
+    ; save rsp of caller before calling this func
+    ; 16 is rbp + return addr in stack
+    mov rax, rbp
+    add rax, 16
+    mov qword [rdi + (22 * 8)], rax
+
+    ; save rflags
+    pushfq
+    pop rax
+    mov qword [rdi + (21 * 8)], rax
+
+    ; save cs
+    mov ax, cs
+    mov qword [rdi + (20 * 8)], rax
+
+    ; save instruct pointer that points after this func
+    mov rax, qword [rbp + 8]
+    mov qword [rdi + (19 * 8)], rax
+
+
+    ;; prepare before calling KSAVECONTEXT
+    ;; In other words, leave all registers like before calling func
+
+    pop rax
+    pop rbp
+
+    ; change rsp that points to current context
+    add rdi, (19 * 8)
+    mov rsp, rdi
+    sub rdi, (19 * 8)
+
+    KSAVECONTEXT
+
+.LoadContext:
+    ; set rsp to points next context
+    mov rsp, rsi
+
+    KLOADCONTEXT
+    ; restore 5 items in the top of stack
+    ; which are SS, RSP, RFLAGS, CS, RIP
+    ; and instead of returning, execute code in CS:IP 
+    iretq

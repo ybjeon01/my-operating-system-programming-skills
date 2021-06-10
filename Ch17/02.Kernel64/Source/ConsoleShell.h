@@ -34,7 +34,6 @@ typedef struct kParameterListStruct {
 
 /* shell main function */
 
-
 // main loop of shell
 void kStartConsoleShell(void);
 
@@ -157,8 +156,15 @@ void kMeasureProcessorSpeed(const char *pcParameterBuffer);
 void kShowDateAndTime(const char *pcParameterBuffer);
 
 
-/* custom shell commands */
+// create a simple task and switch to the task until user presses a key, 'q'
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   printMemoryMap does have any parameters
+void kCreateTestTask(const char *pcParameterBuffer);
 
+
+/* custom shell commands */
 
 // check if memory at specific address is readable and writable
 // params:
