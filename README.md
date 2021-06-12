@@ -6,9 +6,10 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch17)
+## Current State (Ch18)
 
-![capture of MINT64OS in real computer](Ch17/summary/assets/result2.jpg)
+[![capture of MINT64OS in real computer](Ch18/summary/assets/result3.jpg)](https://youtu.be/2numiF76nx0)
+
 
 
 
@@ -38,6 +39,7 @@ problem
 
 6. [CH15_sub1 in real computer 2](https://www.youtube.com/watch?v=7wx2FVJK7-A)
 
+7. [Ch18 in real computer](https://youtu.be/2numiF76nx0)
 
 # To Do List
 
@@ -757,3 +759,53 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
 
         * add a shell command that creates a test task and switch context
         from shell to the task
+
+
+* Ch18
+
+    * describe Round-Robin scheduling, a preemptive scheduling
+
+    * describe Linked List, a data structure that is used for scheduler
+
+    * describe why context switching in interrupt context should be
+    implemented in different way
+
+    * have shell command that tests multitasking
+    
+    * summaries
+
+        * [18-1.md](Ch18/summary/18-1.md)
+        * [18-2.md](Ch18/summary/18-2.md)
+        * [18-3.md](Ch18/summary/18-3.md)
+
+    * [result image1](Ch18/summary/assets/result1.PNG)
+    * [result image2](Ch18/summary/assets/result2.PNG)
+    * [result image3 in real pc](Ch18/summary/assets/result3.jpg)
+
+    1. 02.Kernel64/Source/List.[h, c]
+
+        * implement Linked List which is utilized in Round-Robin task scheduler
+
+    2. 02.Kernel64/Source/Task.[h, c]
+
+        * implement more sophisticated Task Pool which can have up to 1024 tasks
+
+        * implement Round-Robin Scheduler
+
+    3. 02.Kernel64/Source/InterruptHandler.[h, c]
+
+        * call scheduler when PIT interrupt happens and switch context if
+        cpu time of current task is expired
+
+    4. 02.Kernel64/Source/ISR.asm
+
+        * has intermediate function that calls PIT interrupt handler
+
+    5. 02.Kernel64/Source/Utility.[h. c]
+
+        * has PIT interrupt counter which is incremented by one when PIt
+        interrupt handler is called
+
+    5. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * has command shell that test scheduler and task creation
