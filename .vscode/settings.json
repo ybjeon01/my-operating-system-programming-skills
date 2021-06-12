@@ -175,6 +175,7 @@
         "sourcedirectory",
         "sprintf",
         "ssoffset",
+        "stacksize",
         "startaddress",
         "stdarg",
         "stdcall",
@@ -210,6 +211,7 @@
         "consoleshell.h": "c",
         "rtc.h": "c",
         "pit.h": "c",
-        "task.h": "c"
+        "task.h": "c",
+        "list.h": "c"
     }
 }
