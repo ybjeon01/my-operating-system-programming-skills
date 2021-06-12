@@ -62,7 +62,7 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
     },
     {
         "createtask",
-        "Create a test task",
+        "Create tasks, ex) createtask 1(type) 10(count)",
         kCreateTestTask
     },
 
@@ -495,67 +495,141 @@ void kShowDateAndTime(const char *pcParameterBuffer) {
 }
 
 
-/* task related arrays and shell commands */
+/* task related shell commands */
 
-// first task is this console shell
-// second task is a simple task that just prints a message
-static TCB gs_vstTask[2] = {0, };
+void kTestTask1(void) {
+    BYTE bData;
+    int iX;
+    int iY;
+    int iMargin;
 
-// a stack for the simple task
-static QWORD gs_vstStack[1024] = {0, };
-
-
-// a simple test task that switches between test tasks
-// this is just a function called by another console shell command
-void kTestTask(void) {
     int i = 0;
-    while (TRUE) {
-        kPrintf(
-            "[%d] This message is from kTestTask. Press any key to switch to"
-            " kConsoleShell~!!\n", 
-        i++
-        );
 
-        kGetCh();
-        kSwitchContext(&(gs_vstTask[1].stContext), &(gs_vstTask[0].stContext));
+    CHARACTER* pstScreen = (CHARACTER *) CONSOLE_VIDEOMEMORYADDRESS;
+    TCB *pstRunningTask = kGetRunningTask();
+
+    // margin from the screen border
+    iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
+
+    iX = iMargin - 1;
+    iY = iMargin - 1;
+
+    while (TRUE) {
+        switch (i) {
+            // when iX, iY on the top line, move to right
+            case 0:
+
+                iX++;
+                if (iX >= (CONSOLE_WIDTH - iMargin)) {
+                    i = 1;
+                }
+                break;
+
+            // when iX, iY on the right line, move to bottom
+            case 1:
+            
+                iY++;
+                if (iY >= (CONSOLE_HEIGHT - iMargin)) {
+                    i = 2;
+                }
+                break;
+
+            // when iX, iY on the bottom line, move to left
+            case 2:
+
+                iX--;
+                if (iX < iMargin) {
+                    i = 3;
+                }
+                break;
+
+            // when iX, iY on the left line, move to top
+            case 3:
+
+                iY--;
+                if (iY < iMargin) {
+                    i = 0;
+                }
+                break;
+        }
+
+        pstScreen[iY * CONSOLE_WIDTH + iX].bCharacter = bData;
+        pstScreen[iY * CONSOLE_WIDTH + iX].bAttribute = bData & 0x0F;
+        bData++;
+        kSchedule();
     }
+
 }
 
 
-// create a simple task and switch to the task until user presses a key, 'q'
-// params:
-//   pcCommandBuffer: parameters passed to command by shell
-// info:
-//   printMemoryMap does have any parameters
-void kCreateTestTask(const char *pcParameterBuffer) {
-    KEYDATA stData;
+// a function called by kCreateTestTask.
+// it print a small pinwheel on the screen
+// based on its task id 
+void kTestTask2(void) {
+    int iOffset;
+
+    CHARACTER* pstScreen = (CHARACTER *) CONSOLE_VIDEOMEMORYADDRESS;
+    TCB *pstRunningTask = kGetRunningTask();
+    char vcData[4] = {'-', '\\', '|', '/'};
+    
     int i = 0;
 
-    // create a TCB for a test task
-    kSetUpTask(
-        &(gs_vstTask[1]),
-        1,
-        0,
-        (QWORD) kTestTask,
-        (void *) gs_vstStack,
-        sizeof(gs_vstStack)
+    // pinwheel appears from the bottom. If pinwheels filled a line,
+    // remaining pinwheels appears on a prev line
+    iOffset = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) * 2;
+    iOffset = CONSOLE_WIDTH * CONSOLE_HEIGHT - (
+        iOffset % (CONSOLE_WIDTH * CONSOLE_HEIGHT)
     );
 
-    // if user hits 'q' letter, quit the shell
     while (TRUE) {
-        kPrintf(
-            "[%d] This message from kConsoleShell. Press q to finish the"
-            " command or other keys to switch to test task\n",
-            i++
-        );
-        if (kGetCh() == 'q') {
-            break;
-        }
+        pstScreen[iOffset].bCharacter = vcData[i % 4];
+        pstScreen[iOffset].bAttribute = (iOffset % 15) + 1;
+        i++;
 
-        // it does not need to create TCB for console shell
-        // because first call of kSwitchContext saves all the context
-        // to TCB for console shell
-        kSwitchContext(&(gs_vstTask[0].stContext), &(gs_vstTask[1].stContext));
+        kSchedule();
+    }
+
+}
+
+
+// create a simple task and switch to the task
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+//     type: type of task
+//       1 (first type task) 
+//       2 (second type task)
+//     count: number of tasks to create
+void kCreateTestTask(const char *pcParameterBuffer) {
+    PARAMETERLIST stList;
+    char vcType[30];
+    char vcCount[30];
+    int i;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+    kGetNextParameter(&stList, vcType);
+    kGetNextParameter(&stList, vcCount);
+
+    switch(kAToI(vcType, 10)) {
+        case 1:
+            
+            for (i = 0; i < kAToI(vcCount, 10); i++) {
+                if (kCreateTask(0, (QWORD) kTestTask1) == NULL) {
+                    break;
+                }
+            }
+            kPrintf("Task1 %d Created\n", i);
+            break;
+
+        case 2:
+        default:
+
+            for (i = 0; i < kAToI(vcCount, 10); i++) {
+                if (kCreateTask(0, (QWORD) kTestTask2) == NULL) {
+                    break;
+                }
+            }
+            kPrintf("Task2 %d Created\n", i);
+            break;
     }
 }
 

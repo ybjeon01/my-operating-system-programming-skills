@@ -156,11 +156,13 @@ void kMeasureProcessorSpeed(const char *pcParameterBuffer);
 void kShowDateAndTime(const char *pcParameterBuffer);
 
 
-// create a simple task and switch to the task until user presses a key, 'q'
+// create a simple task and switch to the task
 // params:
 //   pcCommandBuffer: parameters passed to command by shell
-// info:
-//   printMemoryMap does have any parameters
+//     type: type of task
+//       1 (first type task) 
+//       2 (second type task)
+//     count: number of tasks to create
 void kCreateTestTask(const char *pcParameterBuffer);
 
 
