@@ -24,4 +24,10 @@ void kCommonInterruptHandler(int iVectorNumber);
 //   iVectorNumber: IDT gate descriptor index number
 void kKeyboardHandler(int iVectorNumber);
 
+
+// PIT counter0 Interrupt Handler. This function calls task scheduler
+// params:
+//   iVectorNumber: IDT gate descriptor index number
+void kTimerHandler(int iVectorNumber);
+
 #endif /* __INTERRUPTHANDLER_H__ */

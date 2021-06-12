@@ -2,6 +2,8 @@
 #include "PIC.h"
 #include "Keyboard.h"
 #include "Console.h"
+#include "Task.h"
+#include "Utility.h"
 
 // common exception handler for exceptions that do not have handler
 // info:
@@ -80,4 +82,36 @@ void kKeyboardHandler(int iVectorNumber) {
     // iVectorNumber is number defined in ISR.
     // iVectorNumber is not IRQ number
     kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
+}
+
+
+// PIT counter0 Interrupt Handler. This function calls task scheduler
+// params:
+//   iVectorNumber: IDT gate descriptor index number
+void kTimerHandler(int iVectorNumber) {
+    char vcBuffer[] = "[INT:  , ]";
+	// count how many interrupt occurs
+	static int g_iCommonInterruptCount = 0;
+
+	// interrupt number as ASCII two-digit number
+	vcBuffer[5] = '0' + iVectorNumber / 10;
+	vcBuffer[6] = '0' + iVectorNumber % 10;
+
+	// interrupt count
+	vcBuffer[8] = '0' + g_iCommonInterruptCount;
+	g_iCommonInterruptCount = (g_iCommonInterruptCount + 1) % 10;
+	kPrintStringXY(70, 0, vcBuffer);
+
+	// send EOI to PIC controller
+    // iVectorNumber is not IRQ number, so it is necessary to
+    // subtract iVectorNumber by first IDT descriptor index
+    // coressponding to first IRQ
+	kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
+
+    g_qwTickCount++;
+
+    kDecreaseProcessorTime();
+    if (kIsProcessorTimeExpired()) {
+        kScheduleInInterrupt();
+    }
 }

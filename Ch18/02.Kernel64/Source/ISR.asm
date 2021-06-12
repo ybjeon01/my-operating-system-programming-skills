@@ -6,6 +6,7 @@
 SECTION .text
 
 extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
+extern kTimerHandler
 
 
 ;; 0 to 19, reserved exception/interrupt ISRs
@@ -313,7 +314,7 @@ kISRETCException:
 kISRTimer:
     KSAVECONTEXT
     mov rdi, 32
-    call kCommonInterruptHandler
+    call kTimerHandler
     KLOADCONTEXT
     iretq
 

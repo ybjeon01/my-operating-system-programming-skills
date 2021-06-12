@@ -402,3 +402,16 @@ int kVSPrintf(char *pcBuffer, const char *pcFormatString, va_list ap) {
     pcBuffer[iBufferIndex] = '\0';
     return iBufferIndex;
 }
+
+
+/* scheduler related constants */
+
+volatile QWORD g_qwTickCount = 0;
+
+
+// get the count of ticks that PIT interrupt occurs
+// return:
+//   number of ticks that PIT interrupt happens from the start of booting
+QWORD kGetTickCount(void) {
+    return g_qwTickCount;
+}

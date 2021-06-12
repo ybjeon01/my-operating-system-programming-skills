@@ -161,4 +161,15 @@ int kSprintf(char *pcBuffer, const char *pcFormatString, ...);
 //   size of the formatted string
 int kVSPrintf(char *pcBuffer, const char *pcFormatString, va_list ap);
 
+
+/* scheduler related constants */
+
+extern volatile QWORD g_qwTickCount;
+
+
+// get the count of ticks that PIT interrupt occurs
+// return:
+//   number of ticks that PIT interrupt happens from the start of booting
+QWORD kGetTickCount(void);
+
 #endif /* __UTILITY_H__ */
