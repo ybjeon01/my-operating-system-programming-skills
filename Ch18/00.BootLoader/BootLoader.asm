@@ -285,19 +285,21 @@ LASTTRACK: db 0x00
 ; Partition3 0x01DE
 ; Partition4 0x01EE
 ; We only fill/use Partition1
-TIMES 0x1BE-($-$$) DB 0
-db 0x80         ; Boot indicator flag (0x80 means bootable)
-db 0         ; Starting head
-db 3      ; Starting sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
-db 0         ; Starting cylinder (10 bits)
-db 0x8B         ; System ID   (0x8B means FAT32)
-db 0         ; Ending head
-db 100         ; Ending sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
-db 0         ; Ending cylinder (10 bits)
-dd 2      ; Relative sector (32 bits, start of partition)
-dd 97   ; Total sectors in partition (32 bits)
-; it's a dummy partition-entry (sectornumbers can't be zeros,
-; starting CHS and LBA values should be the same if converted to each other).
+TIMES 0x1BE - ($ - $$) db 0
+
+;; it's a dummy partition-entry (sectornumbers can't be zeros,
+;; starting CHS and LBA values should be the same if converted to each other).
+
+db 0x80     ; Boot indicator flag (0x80 means bootable)
+db 0        ; Starting head
+db 3        ; Starting sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
+db 0        ; Starting cylinder (10 bits)
+db 0x8B     ; System ID   (0x8B means FAT32)
+db 0        ; Ending head
+db 100      ; Ending sector (6 bits, bits 6-7 are upper 2 bits of cylinder)
+db 0        ; Ending cylinder (10 bits)
+dd 2        ; Relative sector (32 bits, start of partition)
+dd 97       ; Total sectors in partition (32 bits)
 
 
 ; add padding between above code and MBR signature
