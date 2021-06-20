@@ -92,7 +92,7 @@ READDISKPARAMTER:
 
     mov byte [LASTHEAD], dh
     mov al, cl
-    add al, 0x3F
+    and al, 0x3F
 
     mov byte [LASTSECTOR], al
     mov byte [LASTTRACK], ch
