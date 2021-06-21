@@ -29,6 +29,10 @@ SECTIONS {
     . = ALIGN(512);
     .bss : {
         *(.bss)
+
+        /* global variables defined in header or c file */
+        /* static variables goes into .bss or .data depending on the initialization value */
+        *(COMMON)
     }
 
     /* discard all other sections in input files. If this is not specified,

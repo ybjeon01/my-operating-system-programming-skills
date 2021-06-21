@@ -56,8 +56,37 @@
 
 #define TASK_INVALIDID  0xFFFFFFFFFFFFFFFF
 
+
+/* task scheduler related constants */
+
 // available processor time (ms) for each task.
 #define TASK_PROCESSORTIME  5
+
+// number of multi level priority queues */
+#define TASK_MAXREADYLISTCOUNT 5
+
+// task priorities
+#define TASK_FLAGS_HIGHEST  0
+#define TASK_FLAGS_HIGH     1
+#define TASK_FLAGS_MEDIUM   2
+#define TASK_FLAGS_LOW      3
+#define TASK_FLAGS_LOWEST   4
+
+// flag to show that a task is waiting to be removed
+#define TASK_FLAGS_WAIT     0xFF
+
+// flag to show that a task is ended
+#define TASK_FLAGS_ENDTASK  0x8000000000000000
+
+// flag to show that a task is a idle task
+#define TASK_FLAGS_IDLE     0x0800000000000000
+
+// macros to get scheduler related flags
+#define GETPRIORITY(x) ((x) & 0xFF)
+
+#define SETPRIORITY(x, priority) ((x) = ((x) & 0xFFFFFFFFFFFFFF00 | (priority)))
+
+#define GETTCBOFFSET(x) ((x) & 0xFFFFFFFF)
 
 
 /* task related structures */
@@ -108,8 +137,21 @@ typedef struct kSchedulerStruct {
     // remaining process time for the current task
     int iProcessorTime;
 
-    // task queue that has tasks ready to run
-    LIST stReadyList;
+    // task queues that have tasks ready to run
+    LIST vstReadyList[TASK_MAXREADYLISTCOUNT];
+
+    // number of execution of each queue
+    // this array deterines which queue to select when selecting next task
+    int viExecuteCount[TASK_MAXREADYLISTCOUNT];
+
+    // current processor load determines how long idle task should be run
+    QWORD qwProcessorLoad;
+
+    // processor time that was spent for idle task
+    QWORD qwSpendProcessorTimeinIdleTask;
+
+    // wait task queue that have tasks ready to end
+    LIST stWaitList;
 } SCHEDULER;
 
 #pragma pack(pop)
@@ -180,17 +222,19 @@ void kInitializeScheduler(void);
 TCB *kGetRunningTask(void);
 
 
-// remove the first task in the ready-to-run task queue
+// remove the next task in the multi-level priority queues
 // return:
-//   the first task's TCB in the ready-to-run task queue
-//   if there is no tasks in the queue, null is returned
+//   The higest task's TCB in the multi-level priority queues
+//   if there are no tasks in the queues, null is returned
 TCB *kGetNextTaskToRun(void);
 
 
-// add a non-empty task to ready-to-run-queue
+// add a non-empty task to multi-level priority queues
 // params:
-//   pstTask: a non-empty task to put into queue
-void kAddTaskToReadyList(TCB *pstTask);
+//   pstTask: a non-empty task to put into queues
+// return:
+//   True if the function succeed. Otherwise, False
+BOOL kAddTaskToReadyList(TCB *pstTask);
 
 
 // schedule a task to run now
@@ -229,5 +273,87 @@ void kDecreaseProcessorTime(void);
 //   True if expired. Otherwise, False
 BOOL kIsProcessorTimeExpired(void);
 
+
+// remove task from multi level priority queues
+// params:
+//   qwTaskID: task id to remove
+// return:
+//  task that has qwTaskID
+//  if qwTaskID is invalid, null is returned
+TCB *kRemoveTaskFromReadyList(QWORD qwTaskID);
+
+
+// change priority of a task
+// params:
+//   qwTaskID: task id to change priority
+//   bPriority: priority that you want
+// return:
+//   True if it succeeds. Otherwise False
+//   if qwTaskId or bPriority is invalid, False is returned
+BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority);
+
+
+// find a task and finish the task
+// params:
+//   qwTaskID: task id to end
+// return:
+//   True if the task is finished.
+//   False if the task does not exist
+BOOL kEndTask(QWORD qwTaskID);
+
+
+// let current task end itself
+void kExitTask(void);
+
+
+// get number of tasks in the multi level priority queues
+// return:
+//   total number of tasks in the queues
+int kGetReadyTaskCount(void);
+
+
+// return overall number of tasks
+// return:
+//   total number of valid tasks
+// note:
+//   TCBPool manager has iUseCount variable. I need to ask author why
+//   he did not use iCount
+int kGetTaskCount(void);
+
+
+// get a reference to TCB object by TCB index
+// params:
+//   iOffset: index of TCB to get
+// return:
+//   pointer to a TCB 
+TCB *kGetTCBInTCBPool(int iOffset);
+
+
+// test if TCB of qwID is valid
+// params:
+//   qwID: id of a TCB
+// return:
+//   True if the TCB is a allocated TCB
+//   False if the TCB is free or invalid
+BOOL kIsTaskExist(QWORD qwID);
+
+
+// return the usage of a processor
+// return:
+//   usage of a processor
+QWORD kGetProcessorLoad(void);
+
+
+/* IDLE task related functions */
+
+
+// this idle task frees all tasks in the wait queue,
+// and depending on the processor usage, let the CPU to take a rest
+// by using HLT, a assembly instruction
+void kIdleTask(void);
+
+
+// let the CPU to take a rest depending on the load
+void kHaltProcessorByLoad(void);
 
 #endif /* __TAsK_H__ */

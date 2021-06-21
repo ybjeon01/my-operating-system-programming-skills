@@ -67,7 +67,6 @@ void Main(void) {
     kInitializePIT(MSTOCOUNT(1), 1);
 
 
-
     /* Activate Keyboard and initialize keyboard buffer */
 
     kPrintf("Keyboard Activate And Queue Initialize......[    ]");
@@ -94,9 +93,15 @@ void Main(void) {
     // interrupt was deactivated in 01.Kernel32/EntryPoint.s 
     kEnableInterrupt();
     kSetCursor(45, iCursorY++);
-    kPrintf("Pass\n\n");    
+    kPrintf("Pass\n");    
 
+
+    /* create IDLE task */
+
+    // flag: lowest priority and idle task
+    kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE, (QWORD) kIdleTask);
 
     /* simple shell */
-        kStartConsoleShell();
+    
+    kStartConsoleShell();
 }

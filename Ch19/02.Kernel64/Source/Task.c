@@ -2,13 +2,13 @@
 #include "Descriptor.h"
 #include "Utility.h"
 #include "AssemblyUtility.h"
-
+#include "Console.h"
 
 
 /* singleton data structure of Scheduler and Task pool manager */
 
-static SCHEDULER gs_stScheduler;
-static TCBPOOLMANAGER gs_stTCBPoolManager;
+SCHEDULER gs_stScheduler;
+TCBPOOLMANAGER gs_stTCBPoolManager;
 
 
 /* Task pool related functions */
@@ -75,7 +75,7 @@ TCB *kAllocateTCB(void) {
 //   is unpredictable
 void kFreeTCB(QWORD qwID) {
     // get index of task pool
-    int i = qwID & 0xFFFFFFFF;
+    int i = GETTCBOFFSET(qwID);
 
     kMemSet(
         &(gs_stTCBPoolManager.pstStartAddress[i].stContext),
@@ -107,7 +107,7 @@ TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
     // every task has its own stack
     pvStackAddress = (void *) (
         TASK_STACKPOOLADDRESS + 
-        (TASK_STACKSIZE * pstTask->stLink.qwID & 0xFFFFFFFF)    
+        (TASK_STACKSIZE * GETTCBOFFSET(pstTask->stLink.qwID))
     );
 
     kSetUpTask(
@@ -193,14 +193,24 @@ void kInitializeScheduler(void) {
     // initialize Task Pool
     kInitializeTCBPool();
 
-    // initialize scheduler task queue
-    kInitializeList(&(gs_stScheduler.stReadyList));
+    // initialize scheduler task queues
+    for (int i = 0; i < TASK_MAXREADYLISTCOUNT; i++) {
+        kInitializeList(&(gs_stScheduler.vstReadyList[i]));
+        gs_stScheduler.viExecuteCount[i] = 0;
+    }
+    kInitializeList(&(gs_stScheduler.stWaitList));
  
     // the empty TCB is for code that executed booting
     // when context switch happens, the empty TCB will
     // have the code context
     // stack area of the code is from 6 MB to 7 MB
     gs_stScheduler.pstRunningTask = kAllocateTCB();
+    gs_stScheduler.pstRunningTask->qwFlags = TASK_FLAGS_HIGHEST;
+
+    // initialize variables that help to calculate processor load
+    gs_stScheduler.qwSpendProcessorTimeinIdleTask = 0;
+    gs_stScheduler.qwProcessorLoad = 0;
+
 }
 
 
@@ -212,23 +222,58 @@ TCB *kGetRunningTask(void) {
 }
 
 
-// remove the first task in the ready-to-run task queue
+// remove the next task in the multi-level priority queues
 // return:
-//   the first task's TCB in the ready-to-run task queue
-//   if there is no tasks in the queue, null is returned
+//   The higest task's TCB in the multi-level priority queues
+//   if there are no tasks in the queues, null is returned
 TCB *kGetNextTaskToRun(void) {
-    if (kGetListCount(&(gs_stScheduler.stReadyList)) == 0) {
-        return NULL;
+    TCB *pstTarget = NULL;
+
+    int iTaskCount;
+    LIST *pstReadyList;
+
+    // if tasks in every queue are executed once, it is possible that
+    // no task is selected because every task yields CPU. To make sure
+    // to get next task, looping twice is necessary  
+    for (int j = 0; j < 2; j++) {
+
+        // check from the highest queue to the lowest queue to select a task
+        for (int i = 0; i < TASK_MAXREADYLISTCOUNT; i++) {
+            pstReadyList = &(gs_stScheduler.vstReadyList[i]);
+            iTaskCount = kGetListCount(pstReadyList);
+
+            if (gs_stScheduler.viExecuteCount[i] < iTaskCount) {
+                pstTarget = (TCB *) kRemoveListFromHeader(pstReadyList);
+                gs_stScheduler.viExecuteCount[i]++;
+                break;
+            }
+            else {
+                gs_stScheduler.viExecuteCount[i] = 0;
+            }
+        }
+
+        if (pstTarget) {
+            break;
+        }
+
     }
-    return (TCB *) kRemoveListFromHeader(&(gs_stScheduler.stReadyList));
+    return pstTarget;
 }
 
 
-// add a non-empty task to ready-to-run-queue
+// add a non-empty task to multi-level priority queues
 // params:
-//   pstTask: a non-empty task to put into queue
-void kAddTaskToReadyList(TCB *pstTask) {
-    kAddListToTail(&(gs_stScheduler.stReadyList), pstTask);
+//   pstTask: a non-empty task to put into queues
+// return:
+//   True if the function succeed. Otherwise, False
+BOOL kAddTaskToReadyList(TCB *pstTask) {
+    BYTE bPriority = GETPRIORITY(pstTask->qwFlags);
+
+    if (bPriority >= TASK_MAXREADYLISTCOUNT) {
+        return FALSE;
+    }
+    kAddListToTail(&(gs_stScheduler.vstReadyList[bPriority]), pstTask);
+    return TRUE;
 }
 
 
@@ -243,8 +288,13 @@ void kAddTaskToReadyList(TCB *pstTask) {
 //   causes scheduler not to work properly. In other words, interrupt handler
 //   and this function shares the same resource named scheduler
 void kSchedule(void) {
-    TCB *pstRunningTask, *pstNextTask;
+    TCB *pstRunningTask;
+    TCB *pstNextTask;
     BOOL bPreviousFlag;
+
+    if (kGetReadyTaskCount() < 1) {
+        return;
+    }
 
     bPreviousFlag = kSetInterruptFlag(FALSE);
     pstNextTask = kGetNextTaskToRun();
@@ -254,15 +304,33 @@ void kSchedule(void) {
         return;
     }
 
-    // put current task to task queue
     pstRunningTask = gs_stScheduler.pstRunningTask;
-    kAddTaskToReadyList(pstRunningTask);
 
-    // switch from current task to next task
+
+    /* calculate Idle task related statistics */
+
+    if (pstRunningTask->qwFlags & TASK_FLAGS_IDLE) {
+        gs_stScheduler.qwSpendProcessorTimeinIdleTask +=
+            TASK_PROCESSORTIME - gs_stScheduler.iProcessorTime;
+    }
+
+
+    /* Switch from current task to next task */ 
+
+    // update scheduler
     gs_stScheduler.iProcessorTime = TASK_PROCESSORTIME;
     gs_stScheduler.pstRunningTask = pstNextTask;
 
-    kSwitchContext(&(pstRunningTask->stContext), &(pstNextTask->stContext));
+    // when current task is finished
+    if (pstRunningTask->qwFlags & TASK_FLAGS_ENDTASK) {
+        kAddListToTail(&gs_stScheduler.stWaitList, pstRunningTask);
+        kSwitchContext(NULL, &(pstNextTask->stContext));
+    }
+    // when current task is just yielding CPU
+    else {
+        kAddTaskToReadyList(pstRunningTask);
+        kSwitchContext(&(pstRunningTask->stContext), &(pstNextTask->stContext));
+    }
 
     // If the current task is scheduled to run again by kernel, code is executed
     // from here
@@ -296,25 +364,42 @@ BOOL kScheduleInInterrupt(void) {
         (char *) IST_STARTADDRESS + IST_SIZE - sizeof(CONTEXT)
     );
 
-    /* store running task */
-    kMemCpy(
-        &(pstRunningTask->stContext.vqRegister),
-        pcContextAddress,
-        sizeof(CONTEXT)
-    );
-    kAddTaskToReadyList(pstRunningTask);
+
+    /* calculate Idle task related statistics */
+
+    if (pstRunningTask->qwFlags & TASK_FLAGS_IDLE) {
+        gs_stScheduler.qwSpendProcessorTimeinIdleTask += TASK_PROCESSORTIME;
+    }
 
 
-    /* restore the next task */
+    /* Switch from current task to next task */ 
+
+    // update scheduler
+    gs_stScheduler.iProcessorTime = TASK_PROCESSORTIME;
     gs_stScheduler.pstRunningTask = pstNextTask;
+    
+
+    // when current task is finished
+    if (pstRunningTask->qwFlags & TASK_FLAGS_ENDTASK) {
+        kAddListToTail(&gs_stScheduler.stWaitList, pstRunningTask);
+    }
+    // when current task is just yielding CPU
+    else {
+        kMemCpy(
+            &(pstRunningTask->stContext.vqRegister),
+            pcContextAddress,
+            sizeof(CONTEXT)
+        );
+        kAddTaskToReadyList(pstRunningTask);
+    }
+
+    // switch to next task
     kMemCpy(
         pcContextAddress,
         &(pstNextTask->stContext.vqRegister),
         sizeof(CONTEXT)
     );
 
-    // update scheduler manager
-    gs_stScheduler.iProcessorTime = TASK_PROCESSORTIME;
     return TRUE;
 }
 
@@ -335,4 +420,278 @@ BOOL kIsProcessorTimeExpired(void) {
         return TRUE;
     }
     return FALSE;
+}
+
+
+// remove task from multi level priority queues
+// params:
+//   qwTaskID: task id to remove
+// return:
+//  task that has qwTaskID
+//  if qwTaskID is invalid, null is returned
+TCB *kRemoveTaskFromReadyList(QWORD qwTaskID) {
+    TCB *pstTarget;
+    BYTE bPriority;
+    
+    // if task id is invalid
+    if (GETTCBOFFSET(qwTaskID) >= TASK_MAXCOUNT) {
+        return NULL;
+    }
+
+    // get TCB from task pool by using index in the task id
+    pstTarget = &(gs_stTCBPoolManager.pstStartAddress[GETTCBOFFSET(qwTaskID)]);
+    if (pstTarget->stLink.qwID != qwTaskID) {
+        return NULL;
+    }
+
+    // get priority so the function knows which queue has the task
+    bPriority = GETPRIORITY(pstTarget->qwFlags);
+
+    pstTarget = kRemoveList(&(gs_stScheduler.vstReadyList[bPriority]), qwTaskID);
+    return pstTarget;
+}
+
+
+// change priority of a task
+// params:
+//   qwTaskID: task id to change priority
+//   bPriority: priority that you want
+// return:
+//   True if it succeeds. Otherwise False
+//   if qwTaskId or bPriority is invalid, False is returned
+BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority) {
+    TCB *pstTarget;
+
+    if (bPriority > TASK_MAXREADYLISTCOUNT) {
+        return FALSE;
+    }
+
+    /* when qwTaskID is currently running task */
+
+    // when interrupt happens, scheduler will put the task into
+    // the priority queue
+    pstTarget = gs_stScheduler.pstRunningTask;
+    if (qwTaskID == pstTarget->stLink.qwID) {
+        SETPRIORITY(pstTarget->qwFlags, bPriority);
+        return TRUE;
+    }
+
+
+    /* when qwTaskID is inside ready-to-run queues */
+    pstTarget = kRemoveTaskFromReadyList(qwTaskID);
+    if (pstTarget) {
+        SETPRIORITY(pstTarget->qwFlags, bPriority);
+        return TRUE;
+    }
+
+
+    /* when qwTaskID is inside task pool
+     * 
+     * if task is not in the ready queues, it means that
+     * the task is allocated, but not in the queues yet
+     */
+    // get the task by using index
+    pstTarget = kGetTCBInTCBPool(GETTCBOFFSET(qwTaskID));
+    if (pstTarget) {
+        SETPRIORITY(pstTarget->qwFlags, bPriority);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+// find a task and finish the task
+// params:
+//   qwTaskID: task id to end
+// return:
+//   True if the task is finished.
+//   False if the task does not exist
+BOOL kEndTask(QWORD qwTaskID) {
+    TCB *pstTarget;
+    BYTE bPriority;
+
+
+    /* when qwTaskID is currently running task */
+
+    pstTarget = gs_stScheduler.pstRunningTask;
+    if (pstTarget->stLink.qwID == qwTaskID) {
+        pstTarget->qwFlags |= TASK_FLAGS_ENDTASK;
+        SETPRIORITY(pstTarget->qwFlags, TASK_FLAGS_WAIT);
+
+        // context switch happens and this ended task is never executed again
+        kSchedule();
+    }
+
+
+    /* when qwTaskID is inside ready-to-run queues */
+
+    pstTarget = kRemoveTaskFromReadyList(qwTaskID);
+    if (pstTarget) {
+        pstTarget->qwFlags |= TASK_FLAGS_ENDTASK;
+        SETPRIORITY(pstTarget->qwFlags, TASK_FLAGS_WAIT);
+        kAddListToTail(&(gs_stScheduler.stWaitList), pstTarget);
+        return TRUE;
+    }
+
+    /* when qwTaskID is inside task pool
+     * 
+     * if task is not in the ready queues, it means that
+     * the task is allocated, but not in the queues yet
+     */
+    // get the task by using index
+    pstTarget = kGetTCBInTCBPool(GETTCBOFFSET(qwTaskID));
+    if (pstTarget) {
+        pstTarget->qwFlags |= TASK_FLAGS_ENDTASK;
+        SETPRIORITY(pstTarget->qwFlags, TASK_FLAGS_WAIT);
+        kAddListToTail(&(gs_stScheduler.stWaitList), pstTarget);
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+
+// let current task end itself
+void kExitTask(void) {
+    kEndTask(gs_stScheduler.pstRunningTask->stLink.qwID);
+}
+
+
+// get number of tasks in the multi level priority queues
+// return:
+//   total number of tasks in the queues
+int kGetReadyTaskCount(void) {
+    int iTotalCount = 0;
+
+    for (int i = 0; i < TASK_MAXREADYLISTCOUNT; i++) {
+        iTotalCount += kGetListCount(&(gs_stScheduler.vstReadyList[i]));
+    }
+    return iTotalCount;
+}
+
+
+// return overall number of tasks
+// return:
+//   total number of valid tasks
+// note:
+//   TCBPool manager has iUseCount variable. I need to ask author why
+//   he did not use iCount
+int kGetTaskCount(void) {
+    int iTotalCount;
+
+    // tasks in ready queues
+    iTotalCount = kGetReadyTaskCount();
+
+    // wait list + current task
+    iTotalCount += kGetListCount(&(gs_stScheduler.stWaitList)) + 1;
+
+    return iTotalCount;
+}
+
+
+// get a reference to TCB object by TCB index
+// params:
+//   iOffset: index of TCB to get
+// return:
+//   pointer to a TCB 
+TCB *kGetTCBInTCBPool(int iOffset) {
+    if (0 <= iOffset && iOffset < TASK_MAXCOUNT) {
+        return &(gs_stTCBPoolManager.pstStartAddress[iOffset]);
+    }
+    return NULL;
+}
+
+
+// test if TCB of qwID is valid
+// params:
+//   qwID: id of a TCB
+// return:
+//   True if the TCB is a allocated TCB
+//   False if the TCB is free or invalid
+BOOL kIsTaskExist(QWORD qwID) {
+    TCB *pstTCB = kGetTCBInTCBPool(GETTCBOFFSET(qwID));
+
+    if ((!pstTCB) || (pstTCB->stLink.qwID != qwID)) {
+        return FALSE;
+    }
+    return TRUE;
+}
+
+
+// return the usage of a processor
+// return:
+//   usage of a processor
+QWORD kGetProcessorLoad(void) {
+    return gs_stScheduler.qwProcessorLoad;
+}
+
+
+/* IDLE task related functions */
+
+
+// this idle task frees all tasks in the wait queue,
+// and depending on the processor usage, let the CPU to take a rest
+// by using HLT, a assembly instruction
+void kIdleTask(void) {
+    TCB *pstTask;
+    QWORD qwLastMeasureTickCount;
+    QWORD qwLastSpendTickInIdleTask;
+    QWORD qwCurrentMeasureTickCount;
+    QWORD qwCurrentSpendTickInIdleTask;
+
+    qwLastSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeinIdleTask;
+    qwLastMeasureTickCount = kGetTickCount();
+
+    while (TRUE) {
+        qwCurrentMeasureTickCount = kGetTickCount();
+        qwCurrentSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeinIdleTask;
+
+        if (qwCurrentMeasureTickCount - qwLastMeasureTickCount == 0) {
+            gs_stScheduler.qwProcessorLoad = 0;
+        }
+        else {
+            gs_stScheduler.qwProcessorLoad = 
+                100 - (qwCurrentSpendTickInIdleTask - qwLastSpendTickInIdleTask) *
+                100 / (qwCurrentMeasureTickCount - qwLastMeasureTickCount);
+        }
+
+        qwLastSpendTickInIdleTask = qwCurrentSpendTickInIdleTask;
+        qwLastMeasureTickCount = qwCurrentMeasureTickCount;
+
+        kHaltProcessorByLoad();
+
+        if (kGetListCount(&(gs_stScheduler.stWaitList)) > 0) {
+            while (TRUE) {
+                pstTask = kRemoveListFromHeader(&(gs_stScheduler.stWaitList));
+                if (!pstTask) {
+                    break;
+                }
+                kPrintf(
+                    "IDLE: Task ID[0x%q] is completely ended\n",
+                    pstTask->stLink.qwID
+                );
+                kFreeTCB(pstTask->stLink.qwID);
+            }
+        }
+
+        kSchedule();
+    }
+}
+
+
+// let the CPU to take a rest depending on the load
+void kHaltProcessorByLoad(void) {
+    if (gs_stScheduler.qwProcessorLoad < 40) {
+        kHlt();
+        kHlt();
+        kHlt();
+    }
+    else if (gs_stScheduler.qwProcessorLoad < 80) {
+        kHlt();
+        kHlt();
+    }
+    else if (gs_stScheduler.qwProcessorLoad < 95) {
+        kHlt();
+    }
 }

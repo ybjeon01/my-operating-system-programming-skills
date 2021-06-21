@@ -17,6 +17,10 @@ global kReadTSC
 ; context switch related function
 global kSwitchContext
 
+; Processor Halt related functions
+global kHlt
+
+
 ;; I/O port related functions
 
 ; function that reads one byte from port
@@ -246,3 +250,12 @@ kSwitchContext:
     ; which are SS, RSP, RFLAGS, CS, RIP
     ; and instead of returning, execute code in CS:IP 
     iretq
+
+
+;; Processor Halt related functions
+
+; stop processor executing instructions until signals happen
+kHlt:
+    hlt
+    hlt
+    ret

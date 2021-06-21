@@ -75,5 +75,10 @@ QWORD kReadTSC(void);
 void kSwitchContext(CONTEXT *pstCurrentContext, CONTEXT *pstNextContext);
 
 
+/* Processor Halt related functions */
+
+// stop processor executing instructions until signals happen
+void kHlt(void);
+
 
 #endif /* __ASSEMBLYUTILITY_H__ */
