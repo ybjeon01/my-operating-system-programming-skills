@@ -7,6 +7,7 @@
 #include "PIT.h"
 #include "RTC.h"
 #include "Task.h"
+#include "List.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
@@ -65,6 +66,26 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "Create tasks, ex) createtask 1(type) 10(count)",
         kCreateTestTask
     },
+    {
+        "changepriority",
+        "Change Task Priority, ex)changepriority 1(ID) 2(Priority)",
+        kChangeTaskPriority
+    },
+    {
+        "tasklist",
+        "Show Task List",
+        kShowTaskList
+    },
+    {
+        "killtask",
+        "End Task, ex)killtask 1(ID)",
+        kKillTask
+    },
+    {
+        "cpuload",
+        "Show Processor Load",
+        kCPULoad
+    },
 
 
     /* custom shell commands */
@@ -84,6 +105,11 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "print MINT64OS banner",
         banner
     },
+    {
+        "listsq",
+        "list scheduler queue ex) listsq ready(name) 1(priority)",
+        kShowSchedulerList
+    }
 };
 
 // main loop of shell
@@ -153,7 +179,7 @@ void kStartConsoleShell(void) {
 // function that search command and execute
 // params:
 //   pcCommandBuffer: buffer that contains command string 
-void kExecuteCommand(const char *pcCommandBuffer) {
+static void kExecuteCommand(const char *pcCommandBuffer) {
     int i, iSpaceIndex;
     int iCommandBufferLength, iCommandLength;
     int iCount;
@@ -197,7 +223,7 @@ void kExecuteCommand(const char *pcCommandBuffer) {
 // info:
 //   this function is used inside command function to extract parameters
 //   from string buffer
-void kInitializeParameter(PARAMETERLIST *pstList, const char *pcParameter) {
+static void kInitializeParameter(PARAMETERLIST *pstList, const char *pcParameter) {
     pstList->pcBuffer = pcParameter;
     pstList->iLength = kStrLen(pcParameter);
     pstList->iCurrentPosition = 0;
@@ -242,7 +268,7 @@ int kGetNextParameter(PARAMETERLIST *pstList, char *pcParameter) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kHelp does have any parameters
-void kHelp(const char *pcCommandBuffer) {
+static void kHelp(const char *pcCommandBuffer) {
     int i;
     int iCount;  // number of commands
     int iCursorX, iCursorY;
@@ -278,7 +304,7 @@ void kHelp(const char *pcCommandBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kCls does have any parameters
-void kCls(const char *pcParameterBuffer) {
+static void kCls(const char *pcParameterBuffer) {
     // the first line is used for debugging.
     // move cursor to second line
     kClearScreen();
@@ -291,7 +317,7 @@ void kCls(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kCls does have any parameters
-void kShowTotalRAMSize(const char *pcParameterBuffer) {
+static void kShowTotalRAMSize(const char *pcParameterBuffer) {
     kPrintf("Total RAM Size = %d MB\n", kGetTotalRAMSize());
 }
 
@@ -301,7 +327,7 @@ void kShowTotalRAMSize(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   parameters: strings only with number
-void kStringToDecimalHexTest(const char *pcParameterBuffer) {
+static void kStringToDecimalHexTest(const char *pcParameterBuffer) {
     char vcParameter[100];
     int iLength;
     PARAMETERLIST stList;
@@ -344,7 +370,7 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kShutdown does have any parameters
-void kShutdown(const char *pcParameterBuffer) {
+static void kShutdown(const char *pcParameterBuffer) {
     kPrintf("System Shutdown Start...\n");
     kPrintf("Press Any Key To Reboot PC...");
     kGetCh();
@@ -359,7 +385,7 @@ void kShutdown(const char *pcParameterBuffer) {
 //     periodic: boolean value to decide repeat
 //       1: true
 //       0: false
-void kSetTimer(const char *pcParameterBuffer) {
+static void kSetTimer(const char *pcParameterBuffer) {
     char vcParameter[100];
     PARAMETERLIST stList;
     long lValue;
@@ -391,7 +417,7 @@ void kSetTimer(const char *pcParameterBuffer) {
 //     periodic: boolean value to decide repeat
 //       1: true
 //       0: false
-void kWaitUsingPIT(const char *pcParameterBuffer) {
+static void kWaitUsingPIT(const char *pcParameterBuffer) {
     char vcParameter[100];
     int iLength;
     PARAMETERLIST stList;
@@ -429,7 +455,7 @@ void kWaitUsingPIT(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kReadTimeStampCounter(const char *pcParameterBuffer) {
+static void kReadTimeStampCounter(const char *pcParameterBuffer) {
     QWORD qwTSC = kReadTSC();
     kPrintf("Time Stamp Counter = %q\n", qwTSC);
 }
@@ -440,7 +466,7 @@ void kReadTimeStampCounter(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kMeasureProcessorSpeed(const char *pcParmeterBuffer) {
+static void kMeasureProcessorSpeed(const char *pcParmeterBuffer) {
     int i;
     QWORD qwLastTSC, qwTotalTSC = 0;
 
@@ -471,7 +497,7 @@ void kMeasureProcessorSpeed(const char *pcParmeterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kShowDateAndTime(const char *pcParameterBuffer) {
+static void kShowDateAndTime(const char *pcParameterBuffer) {
     BYTE bSecond, bMinute, bHour;
     BYTE bDayOfWeek, bDayOfMonth, bMonth;
     WORD wYear;
@@ -497,7 +523,7 @@ void kShowDateAndTime(const char *pcParameterBuffer) {
 
 /* task related shell commands */
 
-void kTestTask1(void) {
+static void kTestTask1(void) {
     BYTE bData;
     int iX;
     int iY;
@@ -514,7 +540,8 @@ void kTestTask1(void) {
     iX = iMargin - 1;
     iY = iMargin - 1;
 
-    while (TRUE) {
+    // print 2000 characters until the end of the task
+    for (int j = 0; j < 2000; j++) {
         switch (i) {
             // when iX, iY on the top line, move to right
             case 0:
@@ -558,14 +585,15 @@ void kTestTask1(void) {
         bData++;
         kSchedule();
     }
-
+    
+    kExitTask();
 }
 
 
 // a function called by kCreateTestTask.
 // it print a small pinwheel on the screen
 // based on its task id 
-void kTestTask2(void) {
+static void kTestTask2(void) {
     int iOffset;
 
     CHARACTER* pstScreen = (CHARACTER *) CONSOLE_VIDEOMEMORYADDRESS;
@@ -586,7 +614,7 @@ void kTestTask2(void) {
         pstScreen[iOffset].bAttribute = (iOffset % 15) + 1;
         i++;
 
-        kSchedule();
+        // kSchedule();
     }
 
 }
@@ -599,7 +627,7 @@ void kTestTask2(void) {
 //       1 (first type task) 
 //       2 (second type task)
 //     count: number of tasks to create
-void kCreateTestTask(const char *pcParameterBuffer) {
+static void kCreateTestTask(const char *pcParameterBuffer) {
     PARAMETERLIST stList;
     char vcType[30];
     char vcCount[30];
@@ -613,7 +641,7 @@ void kCreateTestTask(const char *pcParameterBuffer) {
         case 1:
             
             for (i = 0; i < kAToI(vcCount, 10); i++) {
-                if (kCreateTask(0, (QWORD) kTestTask1) == NULL) {
+                if (kCreateTask(TASK_FLAGS_LOW, (QWORD) kTestTask1) == NULL) {
                     break;
                 }
             }
@@ -624,13 +652,124 @@ void kCreateTestTask(const char *pcParameterBuffer) {
         default:
 
             for (i = 0; i < kAToI(vcCount, 10); i++) {
-                if (kCreateTask(0, (QWORD) kTestTask2) == NULL) {
+                if (kCreateTask(TASK_FLAGS_LOW, (QWORD) kTestTask2) == NULL) {
                     break;
                 }
             }
             kPrintf("Task2 %d Created\n", i);
             break;
     }
+}
+
+
+// change priority of a task
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     taskID: id of a task to change priority
+//     priority: priority that task will have
+//       range: 0 ~ 4
+static void kChangeTaskPriority(const char *pcParameterBuffer) {
+    PARAMETERLIST stList;
+    char vcID[30];
+    char vcPriority[30];
+    QWORD qwID;
+    BYTE bPriority;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+    kGetNextParameter(&stList, vcID);
+    kGetNextParameter(&stList, vcPriority);
+
+    if (kMemCmp(vcID, "0x", 2) == 0) {
+        qwID = kAToI(vcID+2, 16);
+    }
+    else {
+        qwID = kAToI(vcID, 10);
+    }
+
+    bPriority = kAToI(vcPriority, 10);
+    kPrintf("Change Task Priority ID [0x%q] Priority[%d] ", qwID, bPriority);
+
+    if (kChangePriority(qwID, bPriority)) {
+        kPrintf("Success\n");
+    }
+    else {
+        kPrintf("Fail\n");
+    }
+}
+
+
+// show information about currently created tasks
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowTaskList does have any parameters
+static void kShowTaskList(const char *pcParameterBuffer) {
+    TCB *pstTCB;
+    int iCount = 0;
+
+    kPrintf("=========== Task Total Count [%d] ===========\n", kGetTaskCount());
+    for (iCount = 0; iCount < TASK_MAXCOUNT; iCount++) {
+        pstTCB = kGetTCBInTCBPool(iCount);
+        if ((pstTCB->stLink.qwID >> 32) != 0) {
+            if ((iCount != 0) && ((iCount % 10) == 0)) {
+                kPrintf("Press any key to continue... ('q' is exit) : \n");
+                if (kGetCh() == 'q') {
+                    break;
+                }
+            }
+
+            kPrintf(
+                "[%d] Task ID[0x%Q], Priority[%d] Flags[0x%Q]\n",
+                1 + iCount,
+                pstTCB->stLink.qwID,
+                GETPRIORITY(pstTCB->qwFlags),
+                pstTCB->qwFlags
+            );
+        }
+    }
+}
+
+
+// kill a task by ID
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     id: task id
+static void kKillTask(const char *pcParameterBuffer) {
+    PARAMETERLIST stList;
+    char vcID[30];
+    QWORD qwID;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+    kGetNextParameter(&stList, vcID);
+
+    if (kMemCmp(vcID, "0x", 2) == 0) {
+        qwID = kAToI(vcID + 2, 16);
+    }
+    else {
+        qwID = kAToI(vcID, 10);
+    }
+
+    kPrintf("Kill Task ID [0x%q] ", qwID);
+    if (kEndTask(qwID)) {
+        kPrintf("Success\n");
+    }
+    else {
+        kPrintf("Fail\n");
+    }
+}
+
+
+// show processor usage in percentage
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kCPULoad does have any parameters
+static void kCPULoad(const char *pcParameterBuffer) {
+    kPrintf("Processor Load: %d%%\n", kGetProcessorLoad());
 }
 
 
@@ -646,7 +785,7 @@ void kCreateTestTask(const char *pcParameterBuffer) {
 // example:
 //   access 0x12345
 //   access 1024
-void access(const char *pcParameterBuffer) {
+static void access(const char *pcParameterBuffer) {
     char vcParameter[100];
     PARAMETERLIST stList;
     int iLength;
@@ -687,7 +826,7 @@ void access(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void printMemoryMap(const char *pcParameterBuffer) {
+static void printMemoryMap(const char *pcParameterBuffer) {
     SMAP_entry_t *smap = (SMAP_entry_t *) SMAP_START_ADDRESS;
     DWORD count = *(DWORD *) SMAP_COUNT_ADDRESS;
 
@@ -743,7 +882,7 @@ void printMemoryMap(const char *pcParameterBuffer) {
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   banner does have any parameters
-void banner(const char *pcParameterBuffer) {
+static void banner(const char *pcParameterBuffer) {
     const char *banner = \
         "888b     d888 8888888 888b    888 88888888888 .d8888b.      d8888\n" \
         "8888b   d8888   888   8888b   888     888    d88P  Y88b    d8P888\n" \
@@ -755,4 +894,49 @@ void banner(const char *pcParameterBuffer) {
         "888       888 8888888 888    Y888     888     Y8888PP         888\n"; 
 
     kPrintf(banner);
+}
+
+
+// show information about scheduler lists
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     queueName: name of queue to print
+//       values: [waiting, ready]
+//     priority: priority of ready queue (valid only if queueName is ready)
+//       range: [0, TASK_MAXREADYLISTCOUNT)
+static void kShowSchedulerList(const char *pcParameterBuffer) {
+    extern SCHEDULER gs_stScheduler;
+
+    PARAMETERLIST stList;
+    char vcQueueName[30];
+    kInitializeParameter(&stList, pcParameterBuffer);
+    kGetNextParameter(&stList, vcQueueName);
+ 
+    LIST *pstQueue;
+    if (kMemCmp("waiting", vcQueueName, 7) == 0) {
+        pstQueue = &(gs_stScheduler.stWaitList);
+    }
+    else if (kMemCmp("ready", vcQueueName, 5) == 0) {
+        char vcPriority[2];
+        int iPriority;
+        kGetNextParameter(&stList, vcPriority);
+        iPriority = kAToI(vcPriority, 10);
+
+        if (iPriority < 0 || TASK_MAXREADYLISTCOUNT <= iPriority) {
+            kPrintf("wrong priority: %d\n", iPriority);
+        }
+        pstQueue = &(gs_stScheduler.vstReadyList[iPriority]);
+    }
+    else {
+        kPrintf("wrong list name: %s\n", vcQueueName);
+    }
+
+    LISTLINK *stLink = kGetHeaderFromList(pstQueue);
+
+    while (stLink) {
+        kPrintf("stLink ID: [%q]\n", stLink->qwID);
+        stLink = kGetNextFromList(stLink);
+    }
 }

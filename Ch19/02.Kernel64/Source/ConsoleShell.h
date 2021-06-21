@@ -1,3 +1,10 @@
+// This header file should be included only in ConsoleShell.c and Main.c files.
+// This header file contains static function declaration, so if you include
+// this file, compiler warns you to define the static functions.
+//
+// The way that the functions are defined does not look good.
+// After reading all chapters, split the commands part from ConsoleShell.c
+
 #ifndef __CONSOLESHELL_H__
 #define __CONSOLESHELL_H__
 
@@ -41,7 +48,7 @@ void kStartConsoleShell(void);
 // function that search command and execute
 // params:
 //   pcCommandBuffer: buffer that contains command string 
-void kExecuteCommand(const char *pcCommandBuffer);
+static void kExecuteCommand(const char *pcCommandBuffer);
 
 
 /* parameter related functions which are used inside command */
@@ -54,7 +61,7 @@ void kExecuteCommand(const char *pcCommandBuffer);
 // info:
 //   this function is used inside command function to extract parameters
 //   from string buffer
-void kInitializeParameter(PARAMETERLIST *pstList, const char *pcParameter);
+static void kInitializeParameter(PARAMETERLIST *pstList, const char *pcParameter);
 
 
 // function that gets next parameter from parameter list
@@ -77,7 +84,7 @@ int kGetNextParameter(PARAMETERLIST *pstList, char *pcParameter);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kHelp does have any parameters
-void kHelp(const char* pcParameterBuffer);
+static void kHelp(const char* pcParameterBuffer);
 
 
 // clear screen
@@ -85,7 +92,7 @@ void kHelp(const char* pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kCls does have any parameters
-void kCls(const char* pcParameterBuffer);
+static void kCls(const char* pcParameterBuffer);
 
 
 // show total ram size of the computer
@@ -93,7 +100,7 @@ void kCls(const char* pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kCls does have any parameters
-void kShowTotalRAMSize(const char *pcParameterBuffer);
+static void kShowTotalRAMSize(const char *pcParameterBuffer);
 
 
 // check if given parameter is hex or decimal
@@ -101,7 +108,7 @@ void kShowTotalRAMSize(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   parameters: strings only with number
-void kStringToDecimalHexTest(const char *pcParameterBuffer);
+static void kStringToDecimalHexTest(const char *pcParameterBuffer);
 
 
 // reboot computer
@@ -109,7 +116,7 @@ void kStringToDecimalHexTest(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   kShutdown does have any parameters
-void kShutdown(const char *pcParamegerBuffer);
+static void kShutdown(const char *pcParamegerBuffer);
 
 
 // set timer using PIT counter0 register
@@ -119,7 +126,7 @@ void kShutdown(const char *pcParamegerBuffer);
 //     periodic: boolean value to decide repeat
 //       1: true
 //       0: false
-void kSetTimer(const char *pcParameterBuffer);
+static void kSetTimer(const char *pcParameterBuffer);
 
 
 // busy-wait for a period by using PIT controller
@@ -129,7 +136,7 @@ void kSetTimer(const char *pcParameterBuffer);
 //     periodic: boolean value to decide repeat
 //       1: true
 //       0: false
-void kWaitUsingPIT(const char *pcParameterBuffer);
+static void kWaitUsingPIT(const char *pcParameterBuffer);
 
 
 // read time stamp counter
@@ -137,7 +144,7 @@ void kWaitUsingPIT(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kReadTimeStampCounter(const char *pcParameterBuffer);
+static void kReadTimeStampCounter(const char *pcParameterBuffer);
 
 
 // measure processor maximum clock for 10 seconds
@@ -145,7 +152,7 @@ void kReadTimeStampCounter(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kMeasureProcessorSpeed(const char *pcParameterBuffer);
+static void kMeasureProcessorSpeed(const char *pcParameterBuffer);
 
 
 // print date and time stored in RTC controller
@@ -153,7 +160,7 @@ void kMeasureProcessorSpeed(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void kShowDateAndTime(const char *pcParameterBuffer);
+static void kShowDateAndTime(const char *pcParameterBuffer);
 
 
 // create a simple task and switch to the task
@@ -163,7 +170,44 @@ void kShowDateAndTime(const char *pcParameterBuffer);
 //       1 (first type task) 
 //       2 (second type task)
 //     count: number of tasks to create
-void kCreateTestTask(const char *pcParameterBuffer);
+static void kCreateTestTask(const char *pcParameterBuffer);
+
+
+// change priority of a task
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     taskID: id of a task to change priority
+//     priority: priority that task will have
+//       range: 0 ~ 4
+static void kChangeTaskPriority(const char *pcParameterBuffer);
+
+
+// show information about currently created tasks
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowTaskList does have any parameters
+static void kShowTaskList(const char *pcParameterBuffer);
+
+
+
+// kill a task by ID
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     id: task id
+static void kKillTask(const char *pcParameterBuffer);
+
+
+// show processor usage in percentage
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kCPULoad does have any parameters
+static void kCPULoad(const char *pcParameterBuffer);
 
 
 /* custom shell commands */
@@ -178,7 +222,7 @@ void kCreateTestTask(const char *pcParameterBuffer);
 // example:
 //   access 0x12345
 //   access 1024
-void access(const char *pcParameterBuffer);
+static void access(const char *pcParameterBuffer);
 
 
 // print computer memory map that shows hardware reserved area and
@@ -187,7 +231,7 @@ void access(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   printMemoryMap does have any parameters
-void printMemoryMap(const char *pcParameterBuffer);
+static void printMemoryMap(const char *pcParameterBuffer);
 
 
 // print MINT64OS banner
@@ -195,7 +239,19 @@ void printMemoryMap(const char *pcParameterBuffer);
 //   pcCommandBuffer: parameters passed to command by shell
 // info:
 //   banner does have any parameters
-void banner(const char *pcParameterBuffer);
+static void banner(const char *pcParameterBuffer);
+
+
+// show information about scheduler lists
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     queueName: name of queue to print
+//       values: [waiting, ready]
+//     priority: priority of ready queue (valid only if queueName is ready)
+//       range: [0, TASK_MAXREADYLISTCOUNT)
+static void kShowSchedulerList(const char *pcParameterBuffer);
 
 #endif /*__CONSOLESHELL_H__*/
 
