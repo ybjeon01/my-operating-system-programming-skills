@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch18)
+## Current State (Ch19)
 
-[![capture of MINT64OS in real computer](Ch18/summary/assets/result3.jpg)](https://youtu.be/2numiF76nx0)
+[![capture of MINT64OS in real computer](Ch19/summary/assets/result2.jpg)](https://youtu.be/ATwmjECjap0)
 
 
 
@@ -40,6 +40,9 @@ problem
 6. [CH15_sub1 in real computer 2](https://www.youtube.com/watch?v=7wx2FVJK7-A)
 
 7. [Ch18 in real computer](https://youtu.be/2numiF76nx0)
+
+8. [Ch19 in real computer](https://youtu.be/ATwmjECjap0)
+
 
 # To Do List
 
@@ -809,3 +812,51 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     5. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * has command shell that test scheduler and task creation
+
+
+* Ch18
+
+    * describe multi-level priority queue scheduling.
+
+    * describe IDLE task which halts CPU and retrieves resources allocated
+    ended tasks
+
+    * describe how to use bochs, a (x86) PC emulator which can be used
+    as a debugger
+    
+    * summaries
+
+        * [19-1.md](Ch19/summary/19-1.md)
+        * [19-2.md](Ch19/summary/19-2.md)
+        
+    * [result image1](Ch19/summary/assets/result1.PNG)
+    * [result image2 in real pc](Ch19/summary/assets/result2.jpg)
+
+    1. 02.Kernel64/Source/AssemblyUtility.[h, c]
+
+        * add function that stop CPU reading next instruction until interrupt
+        happens
+
+    2. 02.Kernel64/Source/Task.[h, c]
+
+        * implement multi-level priority queue scheduling algorithm
+
+        * add IDLE task
+
+    3. 02.Kernel64/Source/Main.[h, c]
+
+        * start IDLE task
+
+    4. 02.Kernel64/binary_amd64.x
+
+        * deploy global variables defined outside of functions to .bss
+        section(pool manager and scheduler are defined as global variables
+        to make debugging easier)
+
+    5. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * has shell commands that are related to priority queues and idle task
+
+    6. summary/assets/bochs/*
+
+        * contains example of my bochs setting files
