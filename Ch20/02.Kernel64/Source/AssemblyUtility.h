@@ -81,4 +81,15 @@ void kSwitchContext(CONTEXT *pstCurrentContext, CONTEXT *pstNextContext);
 void kHlt(void);
 
 
+/* MUTEX related functions */
+
+// test a value in destination memory with compare value. and if they are
+// the same value, move the value in bSource to destination memory
+// params:
+//   pbDestination: pointer to a value which you may want to change
+//   bCompare: a value to compare with a value in pbDestination
+//   bSource: a value to put if the compared values are the same
+BOOL kTestAndSet(volatile BYTE *pbDestination, BYTE bCompare, BYTE bSource);
+
+
 #endif /* __ASSEMBLYUTILITY_H__ */

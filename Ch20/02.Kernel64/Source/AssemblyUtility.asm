@@ -20,6 +20,9 @@ global kSwitchContext
 ; Processor Halt related functions
 global kHlt
 
+; MUTEX related functions
+global kTestAndSet
+
 
 ;; I/O port related functions
 
@@ -259,3 +262,30 @@ kHlt:
     hlt
     hlt
     ret
+
+
+;; MUTEX related functions
+
+; test a value in destination memory with compare value. and if they are
+; the same value, move the value in bSource to destination memory
+; params:
+;   pbDestination: pointer to a value which you may want to change
+;   bCompare: a value to compare with a value in pbDestination
+;   bSource: a value to put if the compared values are the same
+kTestAndSet:
+    mov rax, rsi ; move second parameter (bCompare) to rax
+
+    ; if value in rax is the same with the value in [rdi]
+    ; move the value in dl (third param) to [rdi] and 
+    ; set ZF to 1
+    lock cmpxchg byte [rdi], dl
+
+    je .SUCCESS
+
+    .NOTSAME:
+        mov rax, 0x00 ; BOOL FALSE
+        ret
+
+    .SUCCESS:
+        mov rax, 0x01 ; BOOL TRUE
+        ret
