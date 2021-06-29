@@ -199,6 +199,7 @@ static void kShowTaskList(const char *pcParameterBuffer);
 // info:
 //   params:
 //     id: task id
+//         if id is 0xFFFFFFFF, tasks whose id above 0x200000001 are killed
 static void kKillTask(const char *pcParameterBuffer);
 
 
@@ -208,6 +209,15 @@ static void kKillTask(const char *pcParameterBuffer);
 // info:
 //   kCPULoad does have any parameters
 static void kCPULoad(const char *pcParameterBuffer);
+
+
+// creates two tasks that adds 1 to the same variable. and check if
+// mutex synchronization technique works
+// params:
+//   kTestMutex: parameters passed to command by shell
+// info:
+//   kTestMutex does have any parameters
+static void kTestMutex(const char *pcCommandBuffer);
 
 
 /* custom shell commands */

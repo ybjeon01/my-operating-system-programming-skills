@@ -8,6 +8,7 @@
 #include "RTC.h"
 #include "Task.h"
 #include "List.h"
+#include "Synchronization.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
@@ -78,13 +79,18 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
     },
     {
         "killtask",
-        "End Task, ex)killtask 1(ID)",
+        "End Task, ex)killtask 1(ID) or 0xFFFFFFFF(All Task)",
         kKillTask
     },
     {
         "cpuload",
         "Show Processor Load",
         kCPULoad
+    },
+    {
+        "testmutex",
+        "Test Mutex Function",
+        kTestMutex
     },
 
 
@@ -738,10 +744,13 @@ static void kShowTaskList(const char *pcParameterBuffer) {
 // info:
 //   params:
 //     id: task id
+//         if id is 0xFFFFFFFF, tasks whose id above 0x200000001 are killed
 static void kKillTask(const char *pcParameterBuffer) {
     PARAMETERLIST stList;
     char vcID[30];
     QWORD qwID;
+    TCB *pstTCB;
+    int i;
 
     kInitializeParameter(&stList, pcParameterBuffer);
     kGetNextParameter(&stList, vcID);
@@ -753,12 +762,30 @@ static void kKillTask(const char *pcParameterBuffer) {
         qwID = kAToI(vcID, 10);
     }
 
-    kPrintf("Kill Task ID [0x%q] ", qwID);
-    if (kEndTask(qwID)) {
-        kPrintf("Success\n");
+    if (qwID != 0xFFFFFFFF) {
+        kPrintf("Kill Task ID [0x%q] ", qwID);
+        if (kEndTask(qwID)) {
+            kPrintf("Success\n");
+        }
+        else {
+            kPrintf("Fail\n");
+        }
     }
     else {
-        kPrintf("Fail\n");
+        for (i = 2; i < TASK_MAXCOUNT; i++) {
+            pstTCB = kGetTCBInTCBPool(i);
+            qwID = pstTCB->stLink.qwID;
+            
+            if ((qwID >> 32) != 0) {
+                kPrintf("Kill Task ID [0x%q] ", qwID);
+                if (kEndTask(qwID)) {
+                    kPrintf("Success\n");
+                }
+                else {
+                    kPrintf("Fail\n");
+                }
+            }
+        }
     }
 }
 
@@ -770,6 +797,72 @@ static void kKillTask(const char *pcParameterBuffer) {
 //   kCPULoad does have any parameters
 static void kCPULoad(const char *pcParameterBuffer) {
     kPrintf("Processor Load: %d%%\n", kGetProcessorLoad());
+}
+
+
+static MUTEX gs_stMutex;
+static volatile QWORD gs_qwAdder;
+
+// add 1 to a global variable with mutex lock
+// and print the number in the variable
+static void kPrintNumberTask(void) {
+    int i;
+    int j;
+    QWORD qwTickCount;
+
+    // wait until console shell prints all messages
+    qwTickCount = kGetTickCount();
+    while ((kGetTickCount() - qwTickCount) < 50) {
+        kSchedule();
+    }
+
+    for (i = 0; i < 5; i++) {
+        // kLock(&gs_stMutex);
+        kPrintf(
+            "Task ID [0x%Q] Value [%d]\n",
+            kGetRunningTask()->stLink.qwID,
+            gs_qwAdder
+        );
+
+        gs_qwAdder += 1;
+        // kUnlock(&gs_stMutex);
+
+        // modern CPU is really fast so this function can be
+        // done before scheduler interrupt occurs. In order to show
+        // synchronization problem caused by multitasking scheduler
+        // it is necessary to put a finite loop here
+        for (j = 0; j < 30000; j++);
+    }
+
+    // wait for other task that does the same work to print all messages.
+    // this is because kExitTask prints a message to console. I do not want
+    // it to interrupt 
+    qwTickCount = kGetTickCount();
+    while ((kGetTickCount() - qwTickCount) < 1000) {
+        kSchedule();
+    }
+
+    kExitTask();
+}
+
+
+// creates two tasks that adds 1 to the same variable. and check if
+// mutex synchronization technique works
+// params:
+//   kTestMutex: parameters passed to command by shell
+// info:
+//   kTestMutex does have any parameters
+static void kTestMutex(const char *pcCommandBuffer) {
+    int i;
+    gs_qwAdder = 1;
+
+    kInitializeMutex(&gs_stMutex);
+
+    for (i = 0; i < 3; i++) {
+        kCreateTask(TASK_FLAGS_LOW, (QWORD) kPrintNumberTask);
+    }
+    kPrintf("Wait Until %d Task End...\n", i);
+    kGetCh();
 }
 
 
