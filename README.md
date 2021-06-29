@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch19)
+## Current State (Ch20)
 
-[![capture of MINT64OS in real computer](Ch19/summary/assets/result2.jpg)](https://youtu.be/ATwmjECjap0)
+![capture of MINT64OS in real computer](Ch20/summary/assets/result2.jpg)
 
 
 
@@ -814,7 +814,7 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
         * has command shell that test scheduler and task creation
 
 
-* Ch18
+* Ch19
 
     * describe multi-level priority queue scheduling.
 
@@ -860,3 +860,38 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     6. summary/assets/bochs/*
 
         * contains example of my bochs setting files
+
+
+* Ch20
+
+    * describe synchronization problem.
+
+    * describe difference between mutex and semaphore and
+    how to implement mutex 
+    
+    * summaries
+
+        * [20-1.md](Ch20/summary/20-1.md)
+        
+    * [result image1](Ch20/summary/assets/result1.PNG)
+    * [result image2 in real pc](Ch20/summary/assets/result2.jpg)
+
+    1. 02.Kernel64/Source/AssemblyUtility.[h, c]
+
+        * add function that compares and sets value in one assembly instruction
+
+    2. 02.Kernel64/Source/Synchronization.[h, c]
+
+        * implement mutex mechanism
+
+    3. 02.Kernel64/Source/Task.c
+
+        * use mutex object to scheduler
+
+    4. 02.Kernel64/Source/Keyboard.c
+
+        * use mutex object to keyboard queue
+
+    5. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add command that tests mutex mechanism
