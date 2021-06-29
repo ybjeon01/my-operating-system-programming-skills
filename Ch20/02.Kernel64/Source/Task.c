@@ -3,6 +3,7 @@
 #include "Utility.h"
 #include "AssemblyUtility.h"
 #include "Console.h"
+#include "Synchronization.h"
 
 
 /* singleton data structure of Scheduler and Task pool manager */
@@ -98,8 +99,12 @@ void kFreeTCB(QWORD qwID) {
 TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
     TCB *pstTask;
     void *pvStackAddress;
+    BOOL bPreviousFlag;
 
+    bPreviousFlag = kLockForSystemData();
     pstTask = kAllocateTCB();
+    kUnlockForSystemData(bPreviousFlag);
+
     if (pstTask == NULL) {
         return NULL;
     }
@@ -118,7 +123,10 @@ TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
         TASK_STACKSIZE
     );
 
+    bPreviousFlag = kLockForSystemData();
     kAddTaskToReadyList(pstTask);
+    kUnlockForSystemData(bPreviousFlag);
+
     return pstTask;
 }
 
@@ -296,11 +304,11 @@ void kSchedule(void) {
         return;
     }
 
-    bPreviousFlag = kSetInterruptFlag(FALSE);
+    bPreviousFlag = kLockForSystemData();
     pstNextTask = kGetNextTaskToRun();
 
     if (!pstNextTask) {
-        kSetInterruptFlag(bPreviousFlag);
+        kUnlockForSystemData(bPreviousFlag);
         return;
     }
 
@@ -334,7 +342,7 @@ void kSchedule(void) {
 
     // If the current task is scheduled to run again by kernel, code is executed
     // from here
-    kSetInterruptFlag(bPreviousFlag);
+    kUnlockForSystemData(bPreviousFlag);
 }
 
 
@@ -461,10 +469,13 @@ TCB *kRemoveTaskFromReadyList(QWORD qwTaskID) {
 //   if qwTaskId or bPriority is invalid, False is returned
 BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority) {
     TCB *pstTarget;
+    BOOL bPreviousFlag;
 
     if (bPriority > TASK_MAXREADYLISTCOUNT) {
         return FALSE;
     }
+
+    bPreviousFlag = kLockForSystemData();
 
     /* when qwTaskID is currently running task */
 
@@ -497,6 +508,7 @@ BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority) {
         return TRUE;
     }
 
+    kUnlockForSystemData(bPreviousFlag);
     return FALSE;
 }
 
@@ -510,7 +522,7 @@ BOOL kChangePriority(QWORD qwTaskID, BYTE bPriority) {
 BOOL kEndTask(QWORD qwTaskID) {
     TCB *pstTarget;
     BYTE bPriority;
-
+    BOOL bPreviousFlag;
 
     /* when qwTaskID is currently running task */
 
@@ -523,6 +535,8 @@ BOOL kEndTask(QWORD qwTaskID) {
         kSchedule();
     }
 
+    bPreviousFlag = kLockForSystemData();
+
 
     /* when qwTaskID is inside ready-to-run queues */
 
@@ -531,6 +545,7 @@ BOOL kEndTask(QWORD qwTaskID) {
         pstTarget->qwFlags |= TASK_FLAGS_ENDTASK;
         SETPRIORITY(pstTarget->qwFlags, TASK_FLAGS_WAIT);
         kAddListToTail(&(gs_stScheduler.stWaitList), pstTarget);
+        kUnlockForSystemData(bPreviousFlag);
         return TRUE;
     }
 
@@ -545,9 +560,11 @@ BOOL kEndTask(QWORD qwTaskID) {
         pstTarget->qwFlags |= TASK_FLAGS_ENDTASK;
         SETPRIORITY(pstTarget->qwFlags, TASK_FLAGS_WAIT);
         kAddListToTail(&(gs_stScheduler.stWaitList), pstTarget);
+        kUnlockForSystemData(bPreviousFlag);
         return TRUE;
     }
 
+    kUnlockForSystemData(bPreviousFlag);
     return FALSE;
 }
 
@@ -563,10 +580,15 @@ void kExitTask(void) {
 //   total number of tasks in the queues
 int kGetReadyTaskCount(void) {
     int iTotalCount = 0;
+    BOOL bPreviousFlag;
+
+    bPreviousFlag = kLockForSystemData();
 
     for (int i = 0; i < TASK_MAXREADYLISTCOUNT; i++) {
         iTotalCount += kGetListCount(&(gs_stScheduler.vstReadyList[i]));
     }
+
+    kUnlockForSystemData(bPreviousFlag);
     return iTotalCount;
 }
 
@@ -579,13 +601,17 @@ int kGetReadyTaskCount(void) {
 //   he did not use iCount
 int kGetTaskCount(void) {
     int iTotalCount;
+    BOOL bPreviousFlag;
 
     // tasks in ready queues
     iTotalCount = kGetReadyTaskCount();
 
+    bPreviousFlag = kLockForSystemData();
+
     // wait list + current task
     iTotalCount += kGetListCount(&(gs_stScheduler.stWaitList)) + 1;
 
+    kUnlockForSystemData(bPreviousFlag);
     return iTotalCount;
 }
 
@@ -640,6 +666,8 @@ void kIdleTask(void) {
     QWORD qwCurrentMeasureTickCount;
     QWORD qwCurrentSpendTickInIdleTask;
 
+    BOOL bPreviousFlag;
+
     qwLastSpendTickInIdleTask = gs_stScheduler.qwSpendProcessorTimeinIdleTask;
     qwLastMeasureTickCount = kGetTickCount();
 
@@ -663,8 +691,11 @@ void kIdleTask(void) {
 
         if (kGetListCount(&(gs_stScheduler.stWaitList)) > 0) {
             while (TRUE) {
+                bPreviousFlag = kLockForSystemData();
+
                 pstTask = kRemoveListFromHeader(&(gs_stScheduler.stWaitList));
                 if (!pstTask) {
+                    kUnlockForSystemData(bPreviousFlag);
                     break;
                 }
                 kPrintf(
@@ -672,6 +703,7 @@ void kIdleTask(void) {
                     pstTask->stLink.qwID
                 );
                 kFreeTCB(pstTask->stLink.qwID);
+                kUnlockForSystemData(bPreviousFlag);
             }
         }
 

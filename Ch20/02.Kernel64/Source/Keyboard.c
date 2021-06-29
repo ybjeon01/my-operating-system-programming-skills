@@ -3,6 +3,7 @@
 #include "Keyboard.h"
 #include "Queue.h"
 #include "Utility.h"
+#include "Synchronization.h"
 
 // function that checks if output buffer of PS/2 Controller is full.
 // return:
@@ -608,10 +609,10 @@ BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode) {
 
 	if (converted) {
 		// disable interrupt
-		bPreviousInterrupt = kSetInterruptFlag(FALSE);
+		bPreviousInterrupt = kLockForSystemData();
 		bResult = kPutQueue(&gs_stKeyQueue, &stData);
 		// restore previous interrupt
-		kSetInterruptFlag(bPreviousInterrupt);
+		kUnlockForSystemData(bPreviousInterrupt);
 	}
 	return bResult;
 }
@@ -630,10 +631,10 @@ BOOL kGetKeyFromKeyQueue(KEYDATA *pstData) {
 	}
 
 	// disable Interrupt
-	bPreviousInterrupt = kSetInterruptFlag(FALSE);
+	bPreviousInterrupt = kLockForSystemData();
 	// get data from queue
 	bResult = kGetQueue(&gs_stKeyQueue, pstData);
 	// restore interrupt state
-	kSetInterruptFlag(bPreviousInterrupt);
+	kUnlockForSystemData(bPreviousInterrupt);
 	return bResult;
 }
