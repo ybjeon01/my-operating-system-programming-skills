@@ -25,6 +25,7 @@
         "cmos",
         "cmosaddress",
         "cmosdata",
+        "cmpxchg",
         "cobjectfiles",
         "codedescriptor",
         "control",
@@ -152,6 +153,7 @@
         "protectedmode",
         "pst",
         "ptentry",
+        "pthread",
         "pushfq",
         "qemu",
         "qw",
@@ -222,6 +224,7 @@
         "rtc.h": "c",
         "pit.h": "c",
         "task.h": "c",
-        "list.h": "c"
+        "list.h": "c",
+        "synchronization.h": "c"
     }
 }
