@@ -220,6 +220,22 @@ static void kCPULoad(const char *pcParameterBuffer);
 static void kTestMutex(const char *pcCommandBuffer);
 
 
+// creates a process task that makes three threads
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestThread does have any parameters
+static void kTestThread(const char *pcParameterBuffer);
+
+
+// prints strings like matrix movie
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowMatrix does have any parameters
+static void kShowMatrix(const char *pcParameterBuffer);
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable

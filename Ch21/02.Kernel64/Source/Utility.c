@@ -415,3 +415,17 @@ volatile QWORD g_qwTickCount = 0;
 QWORD kGetTickCount(void) {
     return g_qwTickCount;
 }
+
+
+// stop executing instructions for qwMillisecond
+// params:
+//   qwMillisecond: time to sleep
+void kSleep(QWORD qwMillisecond) {
+    QWORD qwLastTickCount;
+
+    qwLastTickCount = g_qwTickCount;
+
+    while ((g_qwTickCount - qwLastTickCount) <= qwMillisecond) {
+        kSchedule();
+    }
+}

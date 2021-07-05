@@ -172,4 +172,10 @@ extern volatile QWORD g_qwTickCount;
 //   number of ticks that PIT interrupt happens from the start of booting
 QWORD kGetTickCount(void);
 
+
+// stop executing instructions for qwMillisecond
+// params:
+//   qwMillisecond: time to sleep
+void kSleep(QWORD qwMillisecond) ;
+
 #endif /* __UTILITY_H__ */
