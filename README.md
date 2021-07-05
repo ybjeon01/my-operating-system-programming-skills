@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch20)
+## Current State (Ch21): Matrix Digital Rain by using threads
 
-![capture of MINT64OS in real computer](Ch20/summary/assets/result2.jpg)
+![capture of MINT64OS in real computer](Ch21/summary/assets/result3.jpg)
 
 
 
@@ -43,6 +43,14 @@ problem
 
 8. [Ch19 in real computer](https://youtu.be/ATwmjECjap0)
 
+9. [Ch21 in real computer](https://youtu.be/5VM0xHjQbfU)
+
+    * describe how to address original showmatrix code problem
+
+10. [Ch21 in real computer](https://youtu.be/-n4KDdYV-Pk)
+
+    * describe how to address general protection exception caused in original
+    code
 
 # To Do List
 
@@ -895,3 +903,37 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     5. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add command that tests mutex mechanism
+
+
+* Ch21
+
+    * describe how to implement thread.
+
+    * describe how to automatically kill a process or thread at the end of task
+    
+    * summaries
+
+        * [21-1.md](Ch21/summary/21-1.md)
+        * [21-2.md](Ch21/summary/21-2.md)
+        
+    * [result image1](Ch21/summary/assets/result1.PNG)
+    * [result image2](Ch21/summary/assets/result2.PNG)
+    * [result image3 in real pc](Ch21/summary/assets/result3.jpg)
+
+    1. 02.Kernel64/Source/Main.c
+
+        * change type of kIdleTask, so it runs as kernel thread 
+
+    2. 02.Kernel64/Source/Task.[h, c]
+
+        * implement thread feature
+        * automatically kill a process or thread when a task is finished
+
+    3. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * has a command that test if threads work without problem
+        * has a fun command that print string as in a movie Matrix
+
+    4. 02.Kernel64/Source/Utility.[h, c]
+
+        * has kSleep function that works like sleep function in `unistd.h`
