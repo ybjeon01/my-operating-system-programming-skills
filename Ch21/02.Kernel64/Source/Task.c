@@ -92,12 +92,20 @@ void kFreeTCB(QWORD qwID) {
 // a handy function that creates a task
 // params:
 //   qwFlags: a flag that determines if other task can interrupt this task
+//   pvMemoryAddress: process memory address which are available to threads
+//   qwMemorySize: size of the process memory
 //   qwEntryPointAddress: start address of a code
 // return:
 //   a ready to use task which is put into task queue
 //   if task pool is full, null is returned
-TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
+TCB *kCreateTask(
+    QWORD qwFlags,
+    void *pvMemoryAddress,
+    QWORD qwMemorySize,
+    QWORD qwEntryPointAddress
+) {
     TCB *pstTask;
+    TCB *pstProcess;
     void *pvStackAddress;
     BOOL bPreviousFlag;
 
@@ -108,6 +116,36 @@ TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
     if (pstTask == NULL) {
         return NULL;
     }
+
+    pstProcess = kGetProcessByThread(kGetRunningTask());
+    // for debugging purpose
+    // if I did not make mistake, this condition statement should not be
+    // executed 
+    if (pstProcess == NULL) {
+        kFreeTCB(pstTask->stLink.qwID);
+        return NULL;
+    }
+
+    // if thread makes another thread
+    if (qwFlags & TASK_FLAGS_THREAD) {
+        pstTask->qwParentProcessID = pstProcess->stLink.qwID;
+        pstTask->pvMemoryAddress = pstProcess->pvMemoryAddress;
+        pstTask->qwMemorySize = pstProcess->qwMemorySize;
+        bPreviousFlag = kLockForSystemData();
+        kAddListToTail(
+            &(pstProcess->stChildThreadList),
+            &(pstTask->stThreadLink)
+        );
+        kUnlockForSystemData(bPreviousFlag);
+    }
+    // if process is created
+    else {
+        pstTask->qwParentProcessID = pstProcess->stLink.qwID;
+        pstTask->pvMemoryAddress = pvMemoryAddress;
+        pstTask->qwMemorySize = qwMemorySize;
+    }
+
+    pstTask->stThreadLink.qwID = pstTask->stLink.qwID;
 
     // every task has its own stack
     pvStackAddress = (void *) (
@@ -122,6 +160,8 @@ TCB *kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
         pvStackAddress,
         TASK_STACKSIZE
     );
+
+    kInitializeList(&(pstTask->stChildThreadList));
 
     bPreviousFlag = kLockForSystemData();
     kAddTaskToReadyList(pstTask);
@@ -155,11 +195,15 @@ void kSetUpTask(
 
     /* set rsp and rbp */
     
+    // set kExitTask function at return address region
+    // so kExitTask is run after command is run
+    *(QWORD *)(pvStackAddress + qwStackSize - 8) = (QWORD) kExitTask;
+
     pstTCB->stContext.vqRegister[TASK_RSPOFFSET] = 
-        (QWORD) pvStackAddress + qwStackSize;
+        (QWORD) pvStackAddress + qwStackSize - 8;
     
     pstTCB->stContext.vqRegister[TASK_RBPOFFSET] = 
-        (QWORD) pvStackAddress + qwStackSize;
+        (QWORD) pvStackAddress + qwStackSize - 8;
 
 
     /* set segment selectors */
@@ -197,7 +241,9 @@ void kSetUpTask(
 //   this function also initializes TCB pool together
 //   Therefore, no need to initialize TCB pool
 void kInitializeScheduler(void) {
-    
+    TCB *pstTask;
+
+
     // initialize Task Pool
     kInitializeTCBPool();
 
@@ -212,13 +258,25 @@ void kInitializeScheduler(void) {
     // when context switch happens, the empty TCB will
     // have the code context
     // stack area of the code is from 6 MB to 7 MB
-    gs_stScheduler.pstRunningTask = kAllocateTCB();
-    gs_stScheduler.pstRunningTask->qwFlags = TASK_FLAGS_HIGHEST;
+    pstTask = kAllocateTCB();
+    gs_stScheduler.pstRunningTask = pstTask;
+    gs_stScheduler.pstRunningTask->qwFlags = (
+        TASK_FLAGS_HIGHEST |
+        TASK_FLAGS_PROCESS |
+        TASK_FLAGS_SYSTEM
+    );
+    pstTask->qwParentProcessID = pstTask->stLink.qwID;
+    pstTask->pvMemoryAddress = (void *) 0x100000;
+    pstTask->qwMemorySize = 0x500000;
+    
+    pstTask->pvStackAddress = (void *) 0x600000;
+    pstTask->qwStackSize = 0x100000;
+    kInitializeList(&(pstTask->stChildThreadList));
+    
 
     // initialize variables that help to calculate processor load
     gs_stScheduler.qwSpendProcessorTimeinIdleTask = 0;
     gs_stScheduler.qwProcessorLoad = 0;
-
 }
 
 
@@ -653,6 +711,34 @@ QWORD kGetProcessorLoad(void) {
 }
 
 
+/* Thread related functions */
+
+
+// return process TCB that thread belongs to
+// params:
+//   pstThread: thread TCB
+// return:
+//   process TCB 
+TCB *kGetProcessByThread(TCB *pstThread) {
+    TCB *pstProcess;
+
+    if (pstThread->qwFlags & TASK_FLAGS_PROCESS) {
+        return pstThread;
+    }
+
+    pstProcess = kGetTCBInTCBPool(GETTCBOFFSET(pstThread->qwParentProcessID));
+
+    if (
+        (pstProcess == NULL) ||
+        (pstProcess->stLink.qwID != pstThread->qwParentProcessID)
+    ) {
+        return NULL;
+    }
+    return pstProcess;
+}
+
+
+
 /* IDLE task related functions */
 
 
@@ -661,6 +747,10 @@ QWORD kGetProcessorLoad(void) {
 // by using HLT, a assembly instruction
 void kIdleTask(void) {
     TCB *pstTask;
+    TCB *pstChildThread;
+    TCB *pstProcess;
+    int i, iCount;
+    void *pstThreadLink;
     QWORD qwLastMeasureTickCount;
     QWORD qwLastSpendTickInIdleTask;
     QWORD qwCurrentMeasureTickCount;
@@ -698,6 +788,54 @@ void kIdleTask(void) {
                     kUnlockForSystemData(bPreviousFlag);
                     break;
                 }
+
+                // if task is process, wait for all threads to end
+                if (pstTask->qwFlags & TASK_FLAGS_PROCESS) {
+                    iCount = kGetListCount(&(pstTask->stChildThreadList));
+                    for (i = 0; i < iCount; i++) {
+                        pstThreadLink = (TCB *) kRemoveListFromHeader(
+                            &(pstTask->stChildThreadList)
+                        );
+                        if (pstThreadLink == NULL) {
+                            break;
+                        }
+                        pstChildThread = GETTCBFROMTHREADLINK(pstThreadLink);
+                        // when thread is in waitlist
+                        // the link is disconnected at that time
+                        kAddListToTail(
+                            &(pstTask->stChildThreadList),
+                            &(pstChildThread->stThreadLink)    
+                        );
+
+                        kEndTask(pstChildThread->stLink.qwID);
+                    }
+
+                    // if child thread is still running, wait for them to end
+                    // but is it possible? they are ended up while system is
+                    // locked
+                    if (kGetListCount(&(pstTask->stChildThreadList)) > 0) {
+                        kAddListToTail(&(gs_stScheduler.stWaitList), pstTask);
+
+                        kUnlockForSystemData(bPreviousFlag);
+                        continue;
+                    }
+                    // if all threads are removed
+                    // free all allocated memory
+                    else {
+                        // TODO: add code later
+                    }
+                }
+                else if (pstTask->qwFlags & TASK_FLAGS_THREAD) {
+                    pstProcess = kGetProcessByThread(pstTask);
+
+                    if (pstProcess != NULL) {
+                        kRemoveList(
+                            &(pstProcess->stChildThreadList),
+                            pstTask->stLink.qwID
+                        );
+                    }
+                }
+
                 kPrintf(
                     "IDLE: Task ID[0x%q] is completely ended\n",
                     pstTask->stLink.qwID

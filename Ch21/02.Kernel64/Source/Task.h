@@ -78,6 +78,15 @@
 // flag to show that a task is ended
 #define TASK_FLAGS_ENDTASK  0x8000000000000000
 
+// flag for system process
+#define TASK_FLAGS_SYSTEM   0x4000000000000000
+
+// flag for normal process
+#define TASK_FLAGS_PROCESS  0x2000000000000000
+
+// flag for thread
+#define TASK_FLAGS_THREAD   0x1000000000000000
+
 // flag to show that a task is a idle task
 #define TASK_FLAGS_IDLE     0x0800000000000000
 
@@ -87,6 +96,8 @@
 #define SETPRIORITY(x, priority) ((x) = ((x) & 0xFFFFFFFFFFFFFF00 | (priority)))
 
 #define GETTCBOFFSET(x) ((x) & 0xFFFFFFFF)
+
+#define GETTCBFROMTHREADLINK(x) (TCB *) ((QWORD)(x) - offsetof(TCB, stThreadLink))
 
 
 /* task related structures */
@@ -106,6 +117,24 @@ typedef struct kTaskControlBlockStruct {
     
     CONTEXT stContext;
     QWORD qwFlags;
+
+    // process memory that can be shared among  thread
+    void *pvMemoryAddress;
+
+    // process memory size
+    QWORD qwMemorySize;
+
+    /* info for thread */
+
+    // thread node that connects all threads of a process
+    LISTLINK stThreadLink;
+
+    // child threads do not use this list
+    // only parent process or process representative manages threads
+    LIST stChildThreadList;
+
+    // parent process ID
+    QWORD qwParentProcessID;
 
     // stack start address
     void *pvStackAddress;
@@ -183,11 +212,18 @@ void kFreeTCB(QWORD qwID);
 // a handy function that creates a task
 // params:
 //   qwFlags: a flag that determines if other task can interrupt this task
+//   pvMemoryAddress: process memory address which are available to threads
+//   qwMemorySize: size of the process memory
 //   qwEntryPointAddress: start address of a code
 // return:
 //   a ready to use task which is put into task queue
 //   if task pool is full, null is returned
-TCB *kCreateTask(QWORD qwFlag, QWORD qwEntryPointAddress);
+TCB *kCreateTask(
+    QWORD qwFlag,
+    void *pvMemoryAddress,
+    QWORD qwMemorySize,
+    QWORD qwEntryPointAddress
+);
 
 
 // create a initial task structure based on the parameters
@@ -355,5 +391,16 @@ void kIdleTask(void);
 
 // let the CPU to take a rest depending on the load
 void kHaltProcessorByLoad(void);
+
+
+/* Thread related functions */
+
+
+// return process TCB that thread belongs to
+// params:
+//   pstThread: thread TCB
+// return:
+//   process TCB 
+TCB *kGetProcessByThread(TCB *pstThread);
 
 #endif /* __TAsK_H__ */

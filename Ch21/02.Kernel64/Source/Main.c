@@ -99,7 +99,17 @@ void Main(void) {
     /* create IDLE task */
 
     // flag: lowest priority and idle task
-    kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE, (QWORD) kIdleTask);
+    kCreateTask(
+        (
+            TASK_FLAGS_LOWEST |
+            TASK_FLAGS_IDLE |
+            TASK_FLAGS_SYSTEM |
+            TASK_FLAGS_THREAD
+        ),
+        0,
+        0,
+        (QWORD) kIdleTask
+    );
 
     /* simple shell */
     
