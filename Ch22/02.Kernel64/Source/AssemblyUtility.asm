@@ -23,6 +23,9 @@ global kHlt
 ; MUTEX related functions
 global kTestAndSet
 
+;FPU related functions
+global kInitializeFPU, kSaveFPUContext, kLoadFPUContext, kSetTS, kClearTS
+
 
 ;; I/O port related functions
 
@@ -289,3 +292,57 @@ kTestAndSet:
     .SUCCESS:
         mov rax, 0x01 ; BOOL TRUE
         ret
+
+
+;; FPU related functions
+
+; initialize registers in FPU device
+; info:
+;   this initialization is for tasks that use FPU device, so it is necessary
+;   that each task calls this function.
+kInitializeFPU:
+    finit
+    ret
+
+
+; save FPU context to TCB
+; params:
+;   pvFPUContext: FPU context in a TCB
+; info:
+;    address of pvFPUContext must be aligned by 16 bytes
+kSaveFPUContext:
+    fxsave [rdi]
+    ret
+
+; load FPU context of a TCB to FPU device
+; params:
+;   pvFPUContext: FPU context in a TCB
+; info:
+;    address of pvFPUContext must be aligned by 16 bytes
+kLoadFPUContext:
+    fxrstor [rdi]
+    ret
+
+
+; set TS bit in CR0
+; info:
+;   if TS bit is set, using FPU device causes exception.
+;   MINT64OS is responsible to switch FPU context and clear
+;   the bit
+kSetTS:
+    push rax
+    mov rax, cr0
+    or rax, 0x08    ; set TS (bit 7) to 1
+    mov cr0, rax
+
+    pop rax
+    ret
+
+; clear TS bit in CR0
+; info:
+;   if TS bit is set, using FPU device causes exception.
+;   MINT64OS is responsible to switch FPU context and clear
+;   the bit
+kClearTS:
+    clts    ; instruction that clears ts bit
+    ret

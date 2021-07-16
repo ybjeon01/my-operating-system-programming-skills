@@ -92,4 +92,45 @@ void kHlt(void);
 BOOL kTestAndSet(volatile BYTE *pbDestination, BYTE bCompare, BYTE bSource);
 
 
+/* FPU related functions */
+
+// initialize registers in FPU device
+// info:
+//   this initialization is for tasks that use FPU device, so it is necessary
+//   that each task calls this function.
+void kInitializeFPU(void);
+
+
+// save FPU context to TCB
+// params:
+//   pvFPUContext: FPU context in a TCB
+// info:
+//    address of pvFPUContext must be aligned by 16 bytes
+void kSaveFPUContext(void *pvFPUContext);
+
+
+// load FPU context of a TCB to FPU device
+// params:
+//   pvFPUContext: FPU context in a TCB
+// info:
+//    address of pvFPUContext must be aligned by 16 bytes
+void kLoadFPUContext(void *pvFPUContext);
+
+
+// set TS bit in CR0
+// info:
+//   if TS bit is set, using FPU device causes exception.
+//   MINT64OS is responsible to switch FPU context and clear
+//   the bit
+void kSetTS(void);
+
+
+// clear TS bit in CR0
+// info:
+//   if TS bit is set, using FPU device causes exception.
+//   MINT64OS is responsible to switch FPU context and clear
+//   the bit
+void kClearTS(void);
+
+
 #endif /* __ASSEMBLYUTILITY_H__ */

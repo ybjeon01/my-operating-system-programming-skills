@@ -55,7 +55,13 @@ kReadCPUID:
 kSwitchAndExecute64bitKernel:
     ; remember that you can not directly set bit to control register
     mov eax, cr4
-    or eax, 0x20			; set PAE bit (bit 5) on
+    or eax, 0x620			; set PAE bit (bit 5) on
+                            ; Below bits are FPU related bits
+                            ; set OSXMMEXCPT bit (bit 10)
+                            ; set OSFXSR bit (bit 9) which changes behavior
+                            ; of fxrstor and fxsave instrunctions, so SIMD
+                            ; related data can be saved or loaded
+
     mov cr4, eax
 
 
@@ -73,9 +79,10 @@ kSwitchAndExecute64bitKernel:
     ; At the moment that CR0 is set, paging feature is activated.
     ; set NW bit (bit 29) = 0, CD bit (bit 30) = 0, PG bit (bit 31) = 1
     ; so activates cache and page capability
+    ; Also activate FPU device (EM = 0, TS = 1, MP = 1)
     mov eax, cr0
-    or eax, 0xE0000000	; set NW = 1, CD = 1, PG = 1
-    xor eax, 0x60000000	; set NW = 0, CD = 0
+    or eax, 0xE000000E	; set NW = 1, CD = 1, PG = 1, TS = 1, EM = 0, MP = 1
+    xor eax, 0x60000004	; set NW = 0, CD = 0, EM = 0
     mov cr0, eax        ; switch paging feature on
 
     jmp 0x08:0x200000	; set CS to IA-32e's code descriptor and jump to
