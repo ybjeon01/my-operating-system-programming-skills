@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch21): Matrix Digital Rain by using threads
+## Current State (Ch22): kernel threads that calculate floating point numbers
 
-![capture of MINT64OS in real computer](Ch21/summary/assets/result3.jpg)
+![capture of MINT64OS in real computer](Ch22/summary/assets/result2.jpg)
 
 
 
@@ -53,12 +53,6 @@ problem
     code
 
 # To Do List
-
-* implement task and add round-robin and multi-level queue schedulers
-
-* add multi-threading feature
-
-* add real number operation (FPU)
 
 * add Hard Disk driver and implement a simple file system(fat32)
 
@@ -937,3 +931,53 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     4. 02.Kernel64/Source/Utility.[h, c]
 
         * has kSleep function that works like sleep function in `unistd.h`
+
+
+* Ch22
+
+    * describe about FPU
+
+    * describe how to implement floating number calculation by using FPU
+    
+    * summaries
+
+        * [22-1.md](Ch22/summary/22-1.md)
+        * [22-2.md](Ch22/summary/22-2.md)
+        
+    * [result image1](Ch22/summary/assets/result1.PNG)
+    * [result image2 in real PC](Ch22/summary/assets/result2.jpg)
+
+    1. 01.Kernel32/Source/ModeSwitch.asm
+
+        * modify CR0 and CR4 to enable FPU instructions
+
+    2. 02.Kernel64/Source/AssemblyUtility.[h, c]
+
+        * add C language wrapper functions that expose FPU instructions
+
+    3. 02.Kernel64/Source/Task.[h, c]
+
+        * add FPU context to TCB structure
+        * add code that handles FPU to scheduler
+
+    4. 02.Kernel64/Source/InterruptHandler.[h, c]
+
+        * add Device Not Available Exception handler that initialize FPU or
+        switch FPU context
+
+    5. 02.Kernel64/Source/ISR.asm
+
+        * has intermediate function that calls Device Not Available interrupt
+        handler
+
+    6. 02.Kernel64/Source/Utility.c
+
+        * add a format string, %f which can print floating-point numbers
+
+    7. 02.Kernel64/Source/Console.[h, c]
+
+        * add a format string, %f which can print floating-point numbers
+
+    8. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add shell command that tests FPU context switch and FPU instructions
