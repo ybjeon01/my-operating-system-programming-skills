@@ -236,6 +236,15 @@ static void kTestThread(const char *pcParameterBuffer);
 static void kShowMatrix(const char *pcParameterBuffer);
 
 
+// creates kernel threads that tests whether FPU is working and 
+// whether FPU context switching is working
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestPIE does have any parameters
+static void kTestPIE(const char *pcParameterBuffer);
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable
