@@ -341,11 +341,14 @@ int kSprintf(char *pcBuffer, const char *pcFormatString, ...) {
 //   size of the formatted string
 int kVSPrintf(char *pcBuffer, const char *pcFormatString, va_list ap) {
     QWORD i;
+    QWORD j;
+    QWORD k;
     int iBufferIndex = 0;
     int iFormatLength, iCopyLength;
     char *pcCopyString;
     QWORD qwValue;
     int iValue;
+    double dValue;
 
     iFormatLength = kStrLen(pcFormatString);
     for (i = 0; i < iFormatLength; i++) {
@@ -388,6 +391,28 @@ int kVSPrintf(char *pcBuffer, const char *pcFormatString, va_list ap) {
                     iBufferIndex += kIToA(qwValue, pcBuffer + iBufferIndex, 16);
                     break;
                 
+                case 'f':
+                    dValue = (double) (va_arg(ap, double));
+                    // round up to two decimal places
+                    dValue += 0.005;
+
+                    pcBuffer[iBufferIndex] = '0' + (QWORD) (dValue * 100) % 10;
+                    pcBuffer[iBufferIndex+1] = '0' + (QWORD) (dValue * 10) % 10;
+                    pcBuffer[iBufferIndex+2] = '.';
+
+                    for (k = 0; ; k++) {
+                        if (((QWORD) dValue == 0) && (k != 0)) {
+                            break;
+                        }
+                        pcBuffer[iBufferIndex + 3 + k] =
+                            '0' + ((QWORD) dValue % 10);
+                        dValue /= 10;
+                    }
+                    pcBuffer[iBufferIndex + 3 + k] = '\0';
+                    kReverseString(pcBuffer + iBufferIndex);
+                    iBufferIndex += 3 + k;
+                    break;
+
                 default:
                     pcBuffer[iBufferIndex] = pcFormatString[i];
                     iBufferIndex++;
