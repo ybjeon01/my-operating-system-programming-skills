@@ -6,7 +6,7 @@
 SECTION .text
 
 extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
-extern kTimerHandler
+extern kTimerHandler, kDeviceNotAvailableHandler
 
 
 ;; 0 to 19, reserved exception/interrupt ISRs
@@ -175,7 +175,7 @@ kISRInvalidOpcode:
 kISRDeviceNotAvailable:
     KSAVECONTEXT
     mov rdi, 7
-    call kCommonExceptionHandler
+    call kDeviceNotAvailableHandler
     KLOADCONTEXT
     iretq
 

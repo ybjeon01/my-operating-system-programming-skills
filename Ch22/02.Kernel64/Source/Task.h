@@ -114,8 +114,7 @@ typedef struct kContextStruct {
 // This is a item of a linked list (TCB Pool).
 typedef struct kTaskControlBlockStruct {
     LISTLINK stLink;
-    
-    CONTEXT stContext;
+
     QWORD qwFlags;
 
     // process memory that can be shared among  thread
@@ -126,6 +125,18 @@ typedef struct kTaskControlBlockStruct {
 
     /* info for thread */
 
+    // parent process ID
+    QWORD qwParentProcessID;
+
+    // this context address must be aligned by 16 bytes
+    // the size of the context should be 512 bytes
+    // Always check offset of this member and TCB pool address
+    // before changing TCB related things
+    QWORD vqwFPUContext[512 / 8];
+
+    // flag that determine whether to initialize FPU device
+    BOOL bFPUUsed;
+
     // thread node that connects all threads of a process
     LISTLINK stThreadLink;
 
@@ -133,13 +144,15 @@ typedef struct kTaskControlBlockStruct {
     // only parent process or process representative manages threads
     LIST stChildThreadList;
 
-    // parent process ID
-    QWORD qwParentProcessID;
+    CONTEXT stContext;
 
     // stack start address
     void *pvStackAddress;
     // stack size
     QWORD qwStackSize;
+
+    // padding for FPU context alignment
+    BYTE padding[11];
 } TCB;
 
 
@@ -181,6 +194,9 @@ typedef struct kSchedulerStruct {
 
     // wait task queue that have tasks ready to end
     LIST stWaitList;
+
+    // ID of the last task that used FPU device
+    QWORD qwLastFPUUsedTaskID;    
 } SCHEDULER;
 
 #pragma pack(pop)
@@ -402,5 +418,20 @@ void kHaltProcessorByLoad(void);
 // return:
 //   process TCB 
 TCB *kGetProcessByThread(TCB *pstThread);
+
+
+/* FPU related functions */
+
+
+// return ID of the last process that used FPU device
+// return:
+//   process ID
+QWORD kGetLastFPUUsedTaskID(void);
+
+
+// set which task used the FPU device
+// params:
+//   process iD
+void kSetLastFPUUsedTaskID(QWORD qwTaskID); 
 
 #endif /* __TAsK_H__ */

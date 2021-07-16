@@ -30,4 +30,13 @@ void kKeyboardHandler(int iVectorNumber);
 //   iVectorNumber: IDT gate descriptor index number
 void kTimerHandler(int iVectorNumber);
 
+
+// FPU device-not-available exception handler
+// info:
+//   if TS bit in CR0 was set by scheduler, this function restores
+//   FPU context
+// params:
+//   iVectorNumber: IDT gate descriptor index number
+void kDeviceNotAvailableHandler(int iVectorNumber);
+
 #endif /* __INTERRUPTHANDLER_H__ */

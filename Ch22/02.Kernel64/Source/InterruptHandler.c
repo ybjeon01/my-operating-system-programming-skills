@@ -4,6 +4,7 @@
 #include "Console.h"
 #include "Task.h"
 #include "Utility.h"
+#include "AssemblyUtility.h"
 
 // common exception handler for exceptions that do not have handler
 // info:
@@ -114,4 +115,63 @@ void kTimerHandler(int iVectorNumber) {
     if (kIsProcessorTimeExpired()) {
         kScheduleInInterrupt();
     }
+}
+
+
+// FPU device-not-available exception handler
+// info:
+//   if TS bit in CR0 was set by scheduler, this function restores
+//   FPU context
+// params:
+//   iVectorNumber: IDT gate descriptor index number
+void kDeviceNotAvailableHandler(int iVectorNumber) {
+    TCB *pstFPUTask;
+    TCB *pstCurrentTask;
+
+    QWORD qwLastFPUTaskID;
+
+    char vcBuffer[] = "[EXC   , ]";
+    static int  g_iFPUInterruptCount = 0;
+
+    // interrupt number as ASCII two-digit number
+	vcBuffer[5] = '0' + iVectorNumber / 10;
+	vcBuffer[6] = '0' + iVectorNumber % 10;
+
+    vcBuffer[8] = '0' + g_iFPUInterruptCount;
+    g_iFPUInterruptCount = (g_iFPUInterruptCount + 1) % 10;
+    kPrintStringXY(48, 0, vcBuffer);
+
+    // clearing TS bit in CR0 means no FPU device exception
+    kClearTS();
+    
+    qwLastFPUTaskID = kGetLastFPUUsedTaskID();
+    pstCurrentTask = kGetRunningTask();
+
+    // if previous task is running currently, no need to restore context
+    // because the context is already in the FPU device
+    if (qwLastFPUTaskID == pstCurrentTask->stLink.qwID) {
+        return;
+    }
+    // save FPU context of task that used the FPU device recently
+    // when kernel is loaded, qwLastFPUTaskID is TASK_INVALIDID at first
+    else if (qwLastFPUTaskID != TASK_INVALIDID) {
+        pstFPUTask = kGetTCBInTCBPool(GETTCBOFFSET(qwLastFPUTaskID));
+        if (
+            (pstFPUTask != NULL) &&
+            (pstFPUTask->stLink.qwID == qwLastFPUTaskID)
+        ) {
+            kSaveFPUContext(pstFPUTask->vqwFPUContext);
+        }
+    }
+
+    // if current task is using the FPU device for the first time,
+    // initialize FPU device
+    if (pstCurrentTask->bFPUUsed == FALSE) {
+        kInitializeFPU();
+        pstCurrentTask->bFPUUsed = TRUE;
+    }
+    else {
+        kLoadFPUContext(pstCurrentTask->vqwFPUContext);
+    }
+    kSetLastFPUUsedTaskID(pstCurrentTask->stLink.qwID);
 }

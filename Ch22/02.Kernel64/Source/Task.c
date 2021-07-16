@@ -163,6 +163,9 @@ TCB *kCreateTask(
 
     kInitializeList(&(pstTask->stChildThreadList));
 
+    // initialize FPU related members
+    pstTask->bFPUUsed = FALSE;
+
     bPreviousFlag = kLockForSystemData();
     kAddTaskToReadyList(pstTask);
     kUnlockForSystemData(bPreviousFlag);
@@ -272,11 +275,18 @@ void kInitializeScheduler(void) {
     pstTask->pvStackAddress = (void *) 0x600000;
     pstTask->qwStackSize = 0x100000;
     kInitializeList(&(pstTask->stChildThreadList));
+
+    // initialize FPU parts
+
+    pstTask->bFPUUsed = FALSE;
     
 
     // initialize variables that help to calculate processor load
     gs_stScheduler.qwSpendProcessorTimeinIdleTask = 0;
     gs_stScheduler.qwProcessorLoad = 0;
+
+    // initialize FPU related members
+    gs_stScheduler.qwLastFPUUsedTaskID = TASK_INVALIDID;
 }
 
 
@@ -381,6 +391,17 @@ void kSchedule(void) {
     }
 
 
+    /* FPU related code */
+
+    // if the next task to execute equals to the current task
+    // do not change TS bit in CR0, so exception will not be raised
+    if (gs_stScheduler.qwLastFPUUsedTaskID != pstNextTask->stLink.qwID) {
+        kSetTS();
+    }
+    else {
+        kClearTS();
+    }
+
     /* Switch from current task to next task */ 
 
     // update scheduler
@@ -435,6 +456,18 @@ BOOL kScheduleInInterrupt(void) {
 
     if (pstRunningTask->qwFlags & TASK_FLAGS_IDLE) {
         gs_stScheduler.qwSpendProcessorTimeinIdleTask += TASK_PROCESSORTIME;
+    }
+
+
+    /* FPU related code */
+
+    // if the next task to execute equals to the current task
+    // do not change TS bit in CR0, so exception will not be raised
+    if (gs_stScheduler.qwLastFPUUsedTaskID != pstNextTask->stLink.qwID) {
+        kSetTS();
+    }
+    else {
+        kClearTS();
     }
 
 
@@ -864,4 +897,24 @@ void kHaltProcessorByLoad(void) {
     else if (gs_stScheduler.qwProcessorLoad < 95) {
         kHlt();
     }
+}
+
+
+/* FPU related functions */
+
+// return ID of the last process that used FPU device
+// return:
+//   process ID
+QWORD kGetLastFPUUsedTaskID(void) {
+    return gs_stScheduler.qwLastFPUUsedTaskID;
+}
+
+
+// set which task used the FPU device
+// params:
+//   process iD
+void kSetLastFPUUsedTaskID(QWORD qwTaskID) {
+    // warning: original code does not lock system.
+    // Isn't it necessary?
+    gs_stScheduler.qwLastFPUUsedTaskID = qwTaskID;
 }
