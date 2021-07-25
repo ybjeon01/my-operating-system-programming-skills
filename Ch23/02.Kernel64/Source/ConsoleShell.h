@@ -245,6 +245,37 @@ static void kShowMatrix(const char *pcParameterBuffer);
 static void kTestPIE(const char *pcParameterBuffer);
 
 
+// show information about dynamic memory module 
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowDynamicMemoryInforation does have any parameters
+static void kShowDynamicMemoryInformation(const char *pcParameterBuffer);
+
+
+// test dynamic memory allocation by allocating memory
+// sequentially, writing to the memory and deallocating the memory
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestSequentialAllocation does have any parameters
+static void kTestSequentialAllocation(const char *pcParameterBuffer);
+
+
+// test if  memory allocation of random size works well
+// by create a lot of thread tasks that asks memory of random size
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestRandomAllocation does have any parameters
+static void kTestRandomAllocation(const char *pcParameterBuffer);
+
+
+// a thread that asks memory of random size, writes to the memory, and
+// dellocate the memory
+static void kRandomAllocationTask(void);
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable

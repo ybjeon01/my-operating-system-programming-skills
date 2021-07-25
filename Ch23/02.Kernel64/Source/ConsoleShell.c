@@ -9,6 +9,7 @@
 #include "Task.h"
 #include "List.h"
 #include "Synchronization.h"
+#include "DynamicMemory.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
@@ -106,6 +107,21 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "testpie",
         "Test PIE Calculation",
         kTestPIE
+    },
+    {
+        "dynamicmeminfo",
+        "Show Dynamic Memory Information",
+        kShowDynamicMemoryInformation
+    },
+    {
+        "testseqalloc",
+        "Test Sequential Allocation & Free",
+        kTestSequentialAllocation
+    },
+    {
+        "testranalloc",
+        "Test Random Allocation & Free",
+        kTestRandomAllocation
     },
 
 
@@ -316,6 +332,15 @@ static void kHelp(const char *pcCommandBuffer) {
         kGetCursor(&iCursorX, &iCursorY);
         kSetCursor(iMaxCommandLength, iCursorY);
         kPrintf("  - %s\n", gs_vstCommandTable[i].pcHelp);
+
+        if ((i != 0) && ((i % 20) == 0)) {
+            kPrintf("Press any key to continue... ('q' is exit): ");
+            if (kGetCh() == 'q') {
+                kPrintf("\n");
+                break;
+            }
+            kPrintf("\n");
+        }
     }
 }
 
@@ -1136,6 +1161,271 @@ static void kTestPIE(const char *pcParameterBuffer) {
             0,
             (QWORD) kFPUTestTask
         );
+    }
+}
+
+
+// show information about dynamic memory module 
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowDynamicMemoryInforation does have any parameters
+static void kShowDynamicMemoryInformation(const char *pcParameterBuffer) {
+    QWORD qwStartAddress;
+    QWORD qwTotalSize;
+    QWORD qwMetaSize;
+    QWORD qwUsedSize;
+
+    kGetDynamicMemoryInformation(
+        &qwStartAddress,
+        &qwTotalSize,
+        &qwMetaSize,
+        &qwUsedSize
+    );
+
+    kPrintf(
+        "============ Dynamic Memory Information ============\n"
+    );
+    kPrintf(
+        "Start Address: [0x%Q]\n",
+         qwStartAddress
+    );
+    kPrintf(
+        "Total Size:    [0x%Q] bytes, [%d]MB\n", 
+        qwTotalSize,
+        qwTotalSize / 1024 / 1024
+    );
+    kPrintf(
+        "Meta Size:     [0x%Q] bytes, [%d] KB\n",
+        qwMetaSize,
+        qwMetaSize / 1024
+    );
+    kPrintf(
+        "Used Size:     [0x%Q] bytes, [%d] KB\n",
+        qwUsedSize,
+        qwUsedSize / 1024
+    );
+}
+
+
+// print current state of dynamic memory manager.
+// this function is for kTestSequentialAllocation function
+static void printCurrentInfo(void) {
+    DYNAMICMEMORY *pstMemory;
+    BITMAP *pstBitmapOfLevel;
+    int i;
+    
+    pstMemory = kGetDynamicMemoryManager();
+
+    kPrintf("[");
+    for (i = 0; i < pstMemory->iMaxLevelCount; i++) {
+        pstBitmapOfLevel = pstMemory->pstBitmapOfLevel + i;
+        kPrintf("%d ", pstBitmapOfLevel->qwExistBitCount);
+    }
+    kPrintf("]");
+}
+
+
+// test dynamic memory allocation by allocating memory
+// sequentially, writing to the memory and deallocating the memory
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestSequentialAllocation does have any parameters
+static void kTestSequentialAllocation(const char *pcParameterBuffer) {
+    DYNAMICMEMORY *pstMemory;
+    long i, j, k;
+    QWORD *pqwBuffer;
+
+    int iCursorX, iCursorY;
+
+    kPrintf("============ Dynamic Memory Test ============\n");
+    pstMemory = kGetDynamicMemoryManager();
+
+    printCurrentInfo();
+
+    for (i = 0; i < pstMemory->iMaxLevelCount; i++) {
+        kPrintf("Block List [%d] Test Start\n", i);
+        kPrintf(
+            "Memory size to allocate: [%d] KB\n",
+            (DYNAMICMEMORY_MIN_SIZE << i) / 1024
+        );   
+        kPrintf("Allocation And Compare: ");
+
+        kGetCursor(&iCursorX, &iCursorY);
+
+        /* Allocation and Comparision */
+        for (j = 0; j < (pstMemory->iBlockCountOfSmallestBlock >> i); j++) {
+            // allocation
+            pqwBuffer = kAllocateMemory(DYNAMICMEMORY_MIN_SIZE << i);
+            
+            if (pqwBuffer == NULL) {
+                kPrintf("\nAllocation Fail\n");
+                return;
+            }
+            
+
+            // comparision
+
+            // test if value can be written to allocated memory
+            for (k = 0; k < (DYNAMICMEMORY_MIN_SIZE << i) / 8; k++) {
+                pqwBuffer[k] = k;
+            }
+
+            // test if value can be read from allocated memory
+            for (k = 0; k < (DYNAMICMEMORY_MIN_SIZE << i) / 8; k++) {
+                if (pqwBuffer[k] != k) {
+                    kPrintf("\nCompare Fail\n");
+                    return;
+                }
+            }
+            
+            // print progress status using period
+            kSetCursor(iCursorX, iCursorY);
+            kPrintf("%d ", j + 1);
+            printCurrentInfo();
+        }
+
+
+        /* Free */
+        
+        kPrintf("\nFree: ");
+        
+        kGetCursor(&iCursorX, &iCursorY);
+
+        for (j = 0; j < (pstMemory->iBlockCountOfSmallestBlock >> i); j++) {
+            if (
+                kFreeMemory( 
+                    (void *) (
+                        (
+                            pstMemory->qwStartAddress + 
+                            (DYNAMICMEMORY_MIN_SIZE << i) *
+                            j
+                        )
+                    )
+                ) == FALSE 
+            ) {
+                kPrintf("\nFree Fail\n");
+                return ;
+            }
+            // print progress status using period
+            kSetCursor(iCursorX, iCursorY);
+            kPrintf("%d ", j + 1);
+            printCurrentInfo();
+        }
+        kPrintf("\n");
+    }
+    kPrintf("Test Complete~!!!\n");
+}
+
+
+// test if  memory allocation of random size works well
+// by create a lot of thread tasks that asks memory of random size
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kTestRandomAllocation does have any parameters
+static void kTestRandomAllocation(const char *pcParameterBuffer) {
+    int i;
+
+    for (i = 0 ; i < 1000; i++) {
+        kCreateTask(
+            TASK_FLAGS_LOWEST | TASK_FLAGS_THREAD,
+            0,
+            0,
+            (QWORD) kRandomAllocationTask    
+        );
+    }
+}
+
+
+// a thread that asks memory of random size, writes to the memory, and
+// dellocate the memory
+static void kRandomAllocationTask(void) {
+    TCB *pstTask;
+    QWORD qwMemorySize;
+    char vcBuffer[200];
+    BYTE *pbAllocationBuffer;
+    int i, j;
+    int iY;
+
+
+    /* get screen location for this thread to print message */
+
+    pstTask = kGetRunningTask();
+    iY = (pstTask->stLink.qwID) % 15 + 9;
+
+
+    /* allocation of memory of random size */
+
+    for (j = 0; j < 10; j++) {
+
+        
+        /* try to allocate memory until success */
+        
+        do {
+            // memory size to allocate will be from 1KB to 32MB
+            qwMemorySize = ((kRandom() % ( 32 * 1024)) + 1 ) * 1024;
+
+            pbAllocationBuffer = kAllocateMemory(qwMemorySize);
+
+            // if memory allocation failed, retry after sleeping.
+            // Other tasks might use all the memory
+            if (pbAllocationBuffer == 0) {
+                kSleep(1);
+            }
+        } while (pbAllocationBuffer == 0);
+
+        kSPrintf(
+            vcBuffer,
+            "|Address: [0x%Q] Size: [0x%Q] Allocation Success",
+            pbAllocationBuffer,
+            qwMemorySize
+        );
+        kPrintStringXY(20, iY, vcBuffer);
+        kSleep(200);
+
+        
+        /* try to write data to dynamic memory */
+
+        kSPrintf(
+            vcBuffer,
+            "|Address: [0x%Q] Size: [0x%Q] Data Write...     ",
+            pbAllocationBuffer,
+            qwMemorySize
+        );
+        kPrintStringXY(20, iY, vcBuffer);
+
+        for (i = 0; i < qwMemorySize / 2; i++) {
+            pbAllocationBuffer[i] = kRandom() & 0xFF;
+            pbAllocationBuffer[i + (qwMemorySize / 2)] = pbAllocationBuffer[i];
+        }
+        kSleep(200);
+
+        kSPrintf(
+            vcBuffer,
+            "|Address: [0x%Q] Size: [0x%Q] Data Verify...    ",
+            pbAllocationBuffer,
+            qwMemorySize
+        );
+        kPrintStringXY(20, iY, vcBuffer);
+
+
+        /* verify if data is written without problem */
+
+        for (i = 0; i < qwMemorySize / 2; i++) {
+
+            if (
+                pbAllocationBuffer[i] !=
+                pbAllocationBuffer[i + (qwMemorySize / 2)]
+            ) {
+                kPrintf("Task ID[0x%Q] Verify Fail\n", pstTask->stLink.qwID);
+                kExitTask();
+            }
+        }
+
+        kFreeMemory(pbAllocationBuffer);
+        kSleep(200);
     }
 }
 
