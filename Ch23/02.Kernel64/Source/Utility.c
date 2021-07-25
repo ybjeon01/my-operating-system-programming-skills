@@ -319,7 +319,7 @@ void kReverseString(char *pcBuffer) {
 //   ...: variables that substitute the template
 // return:
 //   size of the formatted string
-int kSprintf(char *pcBuffer, const char *pcFormatString, ...) {
+int kSPrintf(char *pcBuffer, const char *pcFormatString, ...) {
     va_list ap;
     int iReturn;
 
