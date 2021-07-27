@@ -6,12 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch22): kernel threads that calculate floating point numbers
+## Current State (Ch23): kernel threads that allocate and free dynamic memory of random size  
 
-![capture of MINT64OS in real computer](Ch22/summary/assets/result2.jpg)
-
-
-
+![capture of MINT64OS in real computer](Ch23/summary/assets/result2.jpg)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -55,8 +52,6 @@ problem
 # To Do List
 
 * add Hard Disk driver and implement a simple file system(fat32)
-
-* add a feature: dynamic memory allocation
 
 * add functions offered by stdio.h and unistd.h
 
@@ -981,3 +976,30 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     8. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add shell command that tests FPU context switch and FPU instructions
+
+
+* Ch23
+
+    * describe about dynamic memory and buddy block algorithm
+
+    * describe how to implement buddy block algorithm for dynamic memory
+    allocation
+    
+    * summaries
+
+        * [23-1.md](Ch23/summary/23-1.md)
+        
+    * [result image1](Ch23/summary/assets/result1.PNG)
+    * [result image2 in real PC](Ch23/summary/assets/result2.jpg)
+
+    1. 02.Kernel64/Source/DynamicMemory.[h, c]
+
+        * implement buddy block algorithm
+
+    2. 02.Kernel64/Source/Main.c
+
+        * add dynamic memory allocation feature to kernel
+
+    3. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add shell command that tests dynamic memory allocation
