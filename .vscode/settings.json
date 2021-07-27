@@ -234,6 +234,7 @@
         "pit.h": "c",
         "task.h": "c",
         "list.h": "c",
-        "synchronization.h": "c"
+        "synchronization.h": "c",
+        "dynamicmemory.h": "c"
     }
 }
