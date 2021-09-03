@@ -10,6 +10,7 @@
 #include "List.h"
 #include "Synchronization.h"
 #include "DynamicMemory.h"
+#include "HardDisk.h"
 
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
@@ -123,6 +124,21 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "Test Random Allocation & Free",
         kTestRandomAllocation
     },
+    {
+        "hddinfo",
+        "Show HDD Information",
+        kShowHDDInformation
+    },
+    {
+        "readsector",
+        "Read HDD Sector, ex) readsector 0(LBA) 10(count)",
+        kReadSector
+    },
+    {
+        "writesector",
+        "Write HDD Sector, ex) writesector 0(LBA) 10(count)",
+        kWriteSector
+    },
 
 
     /* custom shell commands */
@@ -146,7 +162,17 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "listsq",
         "list scheduler queue ex) listsq ready(name) 1(priority)",
         kShowSchedulerList
-    }
+    },
+    {
+        "readHDDRegs",
+        "read registers of primary HDD and secondary HDD",
+        kReadHDDRegisters
+    },
+    {
+        "writeHDDReg",
+        "write master or slave flag to HDD DriveHead register, ex) writeHDDReg slave(drive)",
+        kWriteToHDDReg
+    },
 };
 
 // main loop of shell
@@ -1430,6 +1456,282 @@ static void kRandomAllocationTask(void) {
 }
 
 
+// print hdd primary-master hdd info to screen
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowHDDInformation does have any parameters
+static void kShowHDDInformation(const char *pcParameterBuffer) {
+    HDDINFORMATION stHDD;
+    char vcBuffer[100];
+
+    PARAMETERLIST stList;
+
+    char vcPrimary[10];
+    char vcMaster[10];
+    BOOL bPrimary;
+    BOOL bMaster;
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+
+    if (
+        (kGetNextParameter(&stList, vcPrimary) == 0) ||
+        (kGetNextParameter(&stList, vcMaster) == 0)
+    ) {
+        kPrintf("ex) hddinfo 1(primary) 1(master)\n");
+        return;
+    }
+
+
+    bPrimary = kAToI(vcPrimary, 10);
+    bMaster = kAToI(vcMaster, 10);
+
+    kPrintf("%d %d\n", bPrimary, bMaster);
+
+    if (kReadHDDInformation(bPrimary, bMaster, &stHDD) == FALSE) {
+        kPrintf("HDD Information Read Fail\n");
+        return;
+    }
+
+    kPrintf("============ Primary Master HDD Information ============\n");
+
+    // copy model number
+    kMemCpy(vcBuffer, stHDD.vwModelNumber, sizeof(stHDD.vwModelNumber));
+    vcBuffer[sizeof(stHDD.vwModelNumber) - 1] = '\0';
+    kPrintf("Model Number:\t %s\n", vcBuffer);
+
+    // copy serial number
+    kMemCpy(vcBuffer, stHDD.vwSerialNumber, sizeof(stHDD.vwSerialNumber));
+    vcBuffer[sizeof(stHDD.vwSerialNumber) - 1] = '\0';
+    kPrintf("Serial Number:\t %s\n", vcBuffer);
+
+    // head, cylinder, sector numbers
+    kPrintf("Head Count:\t %d\n", stHDD.wNumberOfHead);
+    kPrintf("Cylinder Count:\t %d\n", stHDD.wNumberOfCylinder);
+    kPrintf("Sector Count:\t %d\n", stHDD.wNumberOfSectorPerCylinder);
+
+    // total sector number of HDD
+    kPrintf(
+        "Total Sector:\t %d Sector, %dMB\n",
+        stHDD.dwTotalSectors,
+        stHDD.dwTotalSectors / 2 / 1024  
+    );
+
+}
+
+
+// read sectors from hdd
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     address: address of data to read in decimal format
+//     sectorCount: number of sectors to read
+static void kReadSector(const char *pcParameterBuffer) {
+    PARAMETERLIST stList;
+    char vcPrimary[10];
+    char vcMaster[10];
+
+    int bPrimary;
+    int bMaster;
+
+    char vcLBA[50];
+    char vcSectorCount[50];
+    DWORD dwLBA;
+    int iSectorCount;
+
+    char *pcBuffer;
+    int i, j;
+    BYTE bData;
+    BOOL bExit = FALSE;
+
+    
+    /* read parameters */
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+
+    if (
+        (kGetNextParameter(&stList, vcPrimary) == 0) ||
+        (kGetNextParameter(&stList, vcMaster) == 0) ||
+        (kGetNextParameter(&stList, vcLBA) == 0) ||
+        (kGetNextParameter(&stList, vcSectorCount) == 0)
+    ) {
+        kPrintf("ex) readsector 1(primary) 1(master) 0(LBA) 10(count)\n");
+        return;
+    }
+
+    bPrimary = kAToI(vcPrimary, 10);
+    bMaster = kAToI(vcMaster, 10);
+
+    dwLBA = kAToI(vcLBA, 10);
+    iSectorCount = kAToI(vcSectorCount, 10);
+
+
+    /* read sectors from HDD */
+
+    pcBuffer = kAllocateMemory(iSectorCount * 512);
+    if (
+        kReadHDDSector(bPrimary, bMaster, dwLBA, iSectorCount, pcBuffer)
+        == iSectorCount
+    ) {
+        kPrintf("LBA [%d], [%d] Sector Read Success~!!", dwLBA, iSectorCount);
+
+        // read every 512 bytes (1 sector) and print
+        for (j = 0; j < iSectorCount; j++) {
+            for (i = 0; i < 512; i++) {
+                // print 256 bytes and ask to stop or keep going
+                if (
+                    !((j == 0) && (i == 0)) &&
+                    ((i % 256) == 0)
+                ) {
+                    kPrintf("\nPress any key to continue... ('q' is exit) : ");
+                    if (kGetCh() == 'q') {
+                        bExit = TRUE;
+                        break;
+                    }
+                }
+
+                // print sector and offset at the left of line
+                if ((i % 16) == 0) {
+                    kPrintf("\n[LBA:%d, Offset:%d]\t| ",dwLBA + j, i);
+                }
+
+                // print data in hex in the format of "XX"
+                bData = pcBuffer[j * 512 + i] & 0xFF;
+                if (bData < 16) {
+                    kPrintf("0");
+                }
+                kPrintf("%X ", bData);
+            }
+
+            if (bExit == TRUE) {
+                break;
+            }
+        }
+
+        // finish reading or quit reading
+        kPrintf("\n");
+    }
+    else {
+        kPrintf("Read Fail\n");
+    }
+
+    kFreeMemory(pcBuffer);
+}
+
+
+// write sectors to hdd
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     address: address to write data in decimal format
+//     sectorCount: number of sectors to write
+static void kWriteSector(const char *pcParameterBuffer) {
+    PARAMETERLIST stList;
+    char vcLBA[50];
+    char vcSectorCount[50];
+    DWORD dwLBA;
+    int iSectorCount;
+    char vcPrimary[10];
+    char vcMaster[10];
+    BOOL bPrimary;
+    BOOL bMaster;
+
+    char *pcBuffer;
+    int i, j;
+    BYTE bData;
+    BOOL bExit = FALSE;
+    static DWORD s_dwWriteCount = 0;
+
+
+    /* read parameters */
+
+    kInitializeParameter(&stList, pcParameterBuffer);
+
+    if (
+        (kGetNextParameter(&stList, vcPrimary) == 0) ||
+        (kGetNextParameter(&stList, vcMaster) == 0) ||
+        (kGetNextParameter(&stList, vcLBA) == 0) ||
+        (kGetNextParameter(&stList, vcSectorCount) == 0)
+    ) {
+        kPrintf("ex) writesector 1(primary) 1(master) 0(LBA) 10(count)\n");
+        return;
+    }
+
+    bPrimary = kAToI(vcPrimary, 10);
+    bMaster = kAToI(vcMaster, 10);
+
+    dwLBA = kAToI(vcLBA, 10);
+    iSectorCount = kAToI(vcSectorCount, 10);
+
+
+    /* write data to HDD */
+
+    s_dwWriteCount++;
+    pcBuffer = kAllocateMemory(iSectorCount * 512);
+
+    // prepare for data to write    
+    for (j = 0; j < iSectorCount; j++) {
+        for (i = 0; i < 512; i+=8) {
+            *(DWORD *) &(pcBuffer[j*512 + i]) = dwLBA + j;
+            *(DWORD *) &(pcBuffer[j*512 + i + 4]) = s_dwWriteCount;
+        }
+    }
+
+    // write buffer to hdd
+    if (
+        kWriteHDDSector(
+            bPrimary,
+            bMaster,
+            dwLBA,
+            iSectorCount,
+            pcBuffer
+        ) != iSectorCount
+    ) {
+         kPrintf("Write Fail\n");
+         return;
+    }
+
+    kPrintf("LBA [%d], [%d] Sector Read Succuss~!!", dwLBA, iSectorCount);
+
+    // print buffer to console
+    for (j = 0; j < iSectorCount; j++) {
+        for (i = 0; i < 512; i++) {
+            // print 256 bytes and ask to stop or keep going
+            if (
+                !((j == 0) && (i == 0)) &&
+                ((i % 256) == 0)
+            ) {
+                kPrintf("\nPress any key to continue... ('q' is exit) : ");
+                if (kGetCh() == 'q') {
+                    bExit = TRUE;
+                    break;
+                }
+            }
+
+            // print sector and offset at the left of line
+            if ((i % 16) == 0) {
+                kPrintf("\n[LBA:%d, Offset:%d]\t| ",dwLBA + j, i);
+            }
+
+            // print data in hex in the format of "XX"
+            bData = pcBuffer[j * 512 + i] & 0xFF;
+            if (bData < 16) {
+                kPrintf("0");
+            }
+            kPrintf("%X ", bData);
+        }
+
+        if (bExit == TRUE) {
+            break;
+        }
+    }
+    kPrintf("\n");
+    kFreeMemory(pcBuffer);
+}
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable
@@ -1596,4 +1898,96 @@ static void kShowSchedulerList(const char *pcParameterBuffer) {
         kPrintf("stLink ID: [%q]\n", stLink->qwID);
         stLink = kGetNextFromList(stLink);
     }
+}
+
+
+static void kReadHDDRegisters(const char *pcParameterBuffer) {
+    WORD wPortBase = HDD_PORT_PRIMARYBASE;
+
+    BYTE bStatusReg = kInPortByte(wPortBase + HDD_PORT_INDEX_STATUS);
+    BYTE bDriveHeadReg = kInPortByte(wPortBase + HDD_PORT_INDEX_DRIVEANDHEAD);
+    BYTE bCylinderHighReg = kInPortByte(wPortBase + HDD_PORT_INDEX_CYLINDERMSB);
+    BYTE bCylinderLowReg = kInPortByte(wPortBase + HDD_PORT_INDEX_CYLINDERLSB);
+    BYTE bSectorNum = kInPortByte(wPortBase + HDD_PORT_INDEX_SECTORNUMBER);
+    BYTE bSectorCount = kInPortByte(wPortBase + HDD_PORT_INDEX_SECTORCOUNT);
+    BYTE bError = kInPortByte(wPortBase + HDD_PORT_INDEX_ERROR);
+
+    BYTE bDriveAddrReg = kInPortByte(wPortBase + HDD_PORT_INDEX_DRIVEADDRESS);
+
+    kPrintf("============ Primary ============\n");
+
+    kPrintf(
+        "Status: %X  Drive_Head: %X  Cylinder_MSB: %X  Cylinder_LSB: %X\n",
+        bStatusReg,
+        bDriveHeadReg,
+        bCylinderHighReg,
+        bCylinderLowReg    
+    );
+
+    kPrintf(
+        "Sector_Num: %X  Sector_Count: %X  Error: %X  Drive_Address: %X\n",
+        bSectorNum,
+        bSectorCount,
+        bError,
+        bDriveAddrReg    
+    );
+
+    wPortBase = HDD_PORT_SECONDARYBASE;
+    
+    bStatusReg = kInPortByte(wPortBase + HDD_PORT_INDEX_STATUS);
+    bDriveHeadReg = kInPortByte(wPortBase + HDD_PORT_INDEX_DRIVEANDHEAD);
+    bCylinderHighReg = kInPortByte(wPortBase + HDD_PORT_INDEX_CYLINDERMSB);
+    bCylinderLowReg = kInPortByte(wPortBase + HDD_PORT_INDEX_CYLINDERLSB);
+    bSectorNum = kInPortByte(wPortBase + HDD_PORT_INDEX_SECTORNUMBER);
+    bSectorCount = kInPortByte(wPortBase + HDD_PORT_INDEX_SECTORCOUNT);
+    bError = kInPortByte(wPortBase + HDD_PORT_INDEX_ERROR);
+
+    bDriveAddrReg = kInPortByte(wPortBase + HDD_PORT_INDEX_DRIVEADDRESS);
+
+    kPrintf("============ Secondary ============\n");
+
+    kPrintf(
+        "Status: %X  Drive_Head: %X  Cylinder_MSB: %X  Cylinder_LSB: %X\n",
+        bStatusReg,
+        bDriveHeadReg,
+        bCylinderHighReg,
+        bCylinderLowReg 
+    );
+
+    kPrintf(
+        "Sector_Num: %X  Sector_Count: %X  Error: %X  Drive_Address: %X\n",
+        bSectorNum,
+        bSectorCount,
+        bError,
+        bDriveAddrReg
+    );
+}
+
+
+static void kWriteToHDDReg(const char *pcParameterBuffer) {
+    WORD wPortBase = HDD_PORT_PRIMARYBASE; 
+    BYTE bDriveFlag = 0x00;
+
+    PARAMETERLIST stList;
+    char vcBus[30];
+    char vcDrive[30];
+
+    // initialize paramter list
+    kInitializeParameter(&stList, pcParameterBuffer);
+    kGetNextParameter(&stList, vcBus);
+    kGetNextParameter(&stList, vcDrive);
+
+    if (kMemCmp(vcBus, "secondary", 7) == 0) {
+        wPortBase = HDD_PORT_SECONDARYBASE;
+    }
+
+
+    if (kMemCmp(vcDrive, "slave", 6) == 0) {
+        bDriveFlag = HDD_DRIVEANDHEAD_SLAVE;
+    }
+
+    kOutPortByte(
+        wPortBase + HDD_PORT_INDEX_DRIVEANDHEAD,
+        bDriveFlag
+    );
 }

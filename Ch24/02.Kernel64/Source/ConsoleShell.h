@@ -276,6 +276,33 @@ static void kTestRandomAllocation(const char *pcParameterBuffer);
 static void kRandomAllocationTask(void);
 
 
+// print hdd primary-master hdd info to screen
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowHDDInformation does have any parameters
+static void kShowHDDInformation(const char *pcParameterBuffer);
+
+
+// read sectors from hdd
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     address: address of data to read in decimal format
+//     sectorCount: number of sectors to read
+static void kReadSector(const char *pcParameterBuffer);
+
+// write sectors to hdd
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     address: address to write data in decimal format
+//     sectorCount: number of sectors to write
+static void kWriteSector(const char *pcParameterBuffer);
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable
@@ -318,6 +345,11 @@ static void banner(const char *pcParameterBuffer);
 //     priority: priority of ready queue (valid only if queueName is ready)
 //       range: [0, TASK_MAXREADYLISTCOUNT)
 static void kShowSchedulerList(const char *pcParameterBuffer);
+
+
+static void kReadHDDRegisters(const char *pcParameterBuffer);
+
+static void kWriteToHDDReg(const char *pcParameterBuffer);
 
 #endif /*__CONSOLESHELL_H__*/
 
