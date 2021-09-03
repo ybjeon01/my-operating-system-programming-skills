@@ -5,6 +5,7 @@
 #include "Task.h"
 #include "Utility.h"
 #include "AssemblyUtility.h"
+#include "HardDisk.h"
 
 // common exception handler for exceptions that do not have handler
 // info:
@@ -174,4 +175,33 @@ void kDeviceNotAvailableHandler(int iVectorNumber) {
         kLoadFPUContext(pstCurrentTask->vqwFPUContext);
     }
     kSetLastFPUUsedTaskID(pstCurrentTask->stLink.qwID);
+}
+
+
+// pata HDD read/write ready interrupt handler
+// params:
+//   iVectorNumber: IDT gate descriptor index number
+void kHDDHandler(int iVectorNumber) {
+    char vcBuffer[] = "[INT:  , ]";
+    static int g_iHDDInterruptCount = 0;
+    BYTE bTemp;
+
+    vcBuffer[5] = '0' + iVectorNumber / 10;
+    vcBuffer[6] = '0' + iVectorNumber % 10;
+
+    vcBuffer[8] = '0' + g_iHDDInterruptCount;
+    g_iHDDInterruptCount = (g_iHDDInterruptCount + 1) % 10;
+
+    kPrintStringXY(59, 0, vcBuffer);
+
+    // primary controller
+    if ((iVectorNumber - PIC_IRQSTARTVECTOR) == 14) {
+        kSetHDDInterruptFlag(TRUE, TRUE);
+    }
+    // secondary controller
+    else {
+        kSetHDDInterruptFlag(FALSE, TRUE);
+    }
+
+    kSendEOIToPIC(iVectorNumber - PIC_IRQSTARTVECTOR);
 }

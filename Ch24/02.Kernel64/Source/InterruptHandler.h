@@ -32,11 +32,17 @@ void kTimerHandler(int iVectorNumber);
 
 
 // FPU device-not-available exception handler
+// params:
+//   iVectorNumber: IDT gate descriptor index number
 // info:
 //   if TS bit in CR0 was set by scheduler, this function restores
 //   FPU context
+void kDeviceNotAvailableHandler(int iVectorNumber);
+
+
+// pata HDD read/write ready interrupt handler
 // params:
 //   iVectorNumber: IDT gate descriptor index number
-void kDeviceNotAvailableHandler(int iVectorNumber);
+void kHDDHandler(int iVectorNumber);
 
 #endif /* __INTERRUPTHANDLER_H__ */
