@@ -20,6 +20,20 @@ BYTE kInPortByte(WORD wPort);
 void kOutPortByte(WORD wPort, BYTE bData);
 
 
+// function that reads two bytes from port
+// param:
+//   port address (word): memory address where data is stored
+// return:
+//   two bytes value from the port I/O address
+WORD kInPortWord(WORD wPort);
+
+// function that writes two bytes to port
+// param:
+//   port address (word): I/O port address to write data
+//   data (word): data to write
+void kOutPortWord(WORD wPort, WORD wData);
+
+
 /* GDT, IDT, and TSS related functions */
 
 // function that loads GDTR address to register
