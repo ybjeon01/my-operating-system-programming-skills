@@ -291,9 +291,9 @@ int kGetNextParameter(PARAMETERLIST *pstList, char *pcParameter) {
         }
     }
 
-    kMemCpy(pcParameter, pstList->pcBuffer + pstList->iCurrentPosition, i);
     iLength = i - pstList->iCurrentPosition;
-    pcParameter[i] = '\0';
+    kMemCpy(pcParameter, pstList->pcBuffer + pstList->iCurrentPosition, iLength);
+    pcParameter[iLength] = '\0';
 
     pstList->iCurrentPosition += iLength + 1;
     return iLength;

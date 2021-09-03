@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
     // (size of Kernel64.bin + padding)
     iKernel64SectorCount = AdjustInSectorSize(iTargetFd, iSourceSize);
     printf("[INFO] %s size = [%d] and sector count = [%d]\n",
-    		argv[3], iSourceSize, iKernel32SectorCount);
+    		argv[3], iSourceSize, iKernel64SectorCount);
 
 
     // Section 4
