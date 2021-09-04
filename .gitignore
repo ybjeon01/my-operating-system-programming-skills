@@ -51,8 +51,11 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+## Project related files
+
 # OS image file
 Disk.img
+HDD.img
 *.bin
 
 # Makefile dependency file
