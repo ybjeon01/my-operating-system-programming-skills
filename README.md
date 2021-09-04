@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch23): kernel threads that allocate and free dynamic memory of random size  
+## Current State (Ch24): PATA disk driver that reads first sector of hdd  
 
-![capture of MINT64OS in real computer](Ch23/summary/assets/result2.jpg)
+![capture of MINT64OS in QEMU](Ch24/summary/assets/result1.jpg)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -1003,3 +1003,40 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     3. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add shell command that tests dynamic memory allocation
+
+
+* Ch24
+
+    * describe how to implement PATA disk driver
+
+    * describe ATA specification and registers in ATA disks
+    
+    * summaries
+
+        * [24-1.md](Ch24/summary/24-1.md)
+        
+    * [result image1](Ch24/summary/assets/result1.PNG)
+
+    1. 02.Kernel64/Source/AssemblyUtility.[h, asm]
+
+        * implement I/O port functions that reads or writes 2 bytes
+
+    2. 02.Kernel64/Source/HardDisk.[h, c]
+
+        * implement PATA disk driver
+
+    3. 02.Kernel64/Source/ISR.asm
+
+        * add hard disk interrupts
+
+    4. 02.Kernel64/Source/InterruptHandler.[h, c]
+
+        * add hard disk interrupts
+
+    5. 02.Kernel64/Source/Main.c
+
+        * initialize HDD manager
+
+    6. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add hard disk related commands
