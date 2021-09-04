@@ -8,7 +8,7 @@
 
 ## Current State (Ch24): PATA disk driver that reads first sector of hdd  
 
-![capture of MINT64OS in QEMU](Ch24/summary/assets/result1.jpg)
+![capture of MINT64OS in QEMU](Ch24/summary/assets/result1.JPG)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
