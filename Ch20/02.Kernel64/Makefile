@@ -19,10 +19,10 @@ $(OBJECTFILE): ExecuteInternalBuild
 # one for compiling
 ExecuteInternalBuild:
 	@echo ===    Make Dependency File    ===
-	make -C $(OBJECTDIRECTORY) -f ../makefile InternalDependency
+	make -C $(OBJECTDIRECTORY) -f ../Makefile InternalDependency
 	@echo === Dependency Search Complete ===
 
-	make -C $(OBJECTDIRECTORY) -f ../makefile Compile
+	make -C $(OBJECTDIRECTORY) -f ../Makefile Compile
 
 clean:
 	rm -f *.bin

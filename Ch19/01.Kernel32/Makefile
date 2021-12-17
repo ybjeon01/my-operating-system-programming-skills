@@ -29,9 +29,9 @@ $(OBJECTDIRECTORY)/Kernel32_C.bin: ExecuteInternalBuild
 # Let child process make Kernel32_C.bin
 ExecuteInternalBuild:
 	@echo ===    Make Dependency File    ===
-	make -C $(OBJECTDIRECTORY) -f ../makefile InternalDependency
+	make -C $(OBJECTDIRECTORY) -f ../Makefile InternalDependency
 	@echo === Dependency Search Complete ===
-	make -C $(OBJECTDIRECTORY) -f ../makefile Kernel32_C.internal.bin
+	make -C $(OBJECTDIRECTORY) -f ../Makefile Kernel32_C.internal.bin
 
 ##########################################################
 # below code is related to making Kernel32_C.bin
