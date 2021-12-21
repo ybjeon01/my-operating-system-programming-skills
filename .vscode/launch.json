@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Attach",
+            "type": "cppdbg",
+            "request": "launch",
+            "cwd": ".",
+            // "program": "${workspaceFolder}/Ch15/01.Kernel32/Temp/Kernel32_C.internal.elf",
+            "program": "${workspaceFolder}/bug_fix_Ch15_sub1/02.Kernel64/Temp/Kernel64_C.elf",
+            "stopAtEntry": true,
+            "miDebuggerServerAddress": "localhost:1234",
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
