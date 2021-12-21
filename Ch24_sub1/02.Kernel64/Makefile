@@ -5,6 +5,13 @@ OBJECTDIRECTORY = Temp
 SOURCEDIRECTORY = Source
 
 OBJECTFILE = Kernel64.bin
+OBJECTFILE_ELF = Kernel64_C.elf
+
+NASM64 = nasm -f elf64
+GCC64 = gcc -m64 -ggdb -c -ffreestanding -fno-pie
+LD64 = ld -T ../elf_amd64.x -nostdlib
+OBJCOPY64 = objcopy -j .text -j .data -j .rodata -j .bss -S -O binary
+
 
 all: prepare $(OBJECTFILE)
 
@@ -13,6 +20,7 @@ prepare:
 
 # Kernel64.bin is compiled by child process
 $(OBJECTFILE): ExecuteInternalBuild
+	$(OBJCOPY64) $(OBJECTDIRECTORY)/$(OBJECTFILE_ELF) $@
 
 # Execute two child processes:
 # one for preparing and
@@ -43,9 +51,6 @@ clean:
 # EntryPoint.s at 0x200000(2MB). That's it
 ################################################################################
 
-NASM64 = nasm -f elf64
-GCC64 = gcc -m64 -c -ffreestanding -fno-pie
-LD64 = ld -T ../binary_amd64.x -nostdlib
 
 ASSEMBLYSOURCEFILES = $(wildcard ../$(SOURCEDIRECTORY)/*.asm)
 CSOURCEFILES = $(wildcard ../$(SOURCEDIRECTORY)/*.c)
@@ -59,7 +64,7 @@ InternalDependency:
 	$(GCC64) -MM $(CSOURCEFILES) > Dependency.dep
 
 Compile: EntryPoint.o  $(CENTRYPOINTOBJECTFILE) $(COBJECTFILES) $(ASSEMBLYOBJECTFILES)
-	$(LD64) -o ../$(OBJECTFILE) $^
+	$(LD64) -o $(OBJECTFILE_ELF) $^
 
 # Compile EntryPoint.s that switches Real Mode to Protected Mode
 EntryPoint.o: ../$(SOURCEDIRECTORY)/EntryPoint.s

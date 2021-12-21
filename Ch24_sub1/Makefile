@@ -1,4 +1,23 @@
-.PHONY: all clean run
+# options:
+#  FLOPPY: decide where the os image will reside between 1.44 and 2.88 floppies
+#    possible values: [144, 288]
+#    default: 288
+#  DEBUG_ARCH: decide whether to debug 32bit or 64bit code. 
+#    possible values: [32, 64]
+#    default: 64
+
+QEMU_OPTIONS = -m 64 -hda ./Disk.img -hdb ./HDD.img -rtc base=localtime -M pc
+
+DEBUG_ARCH ?= 64
+DEBUG_COMMAND = qemu-system-x86_64
+DEBUG_OPTIONS = -gdb tcp::1234 -S
+
+ifeq ($(DEBUG_ARCH), 32)
+DEBUG_COMMAND = qemu-system-i386
+endif
+
+
+.PHONY: all clean create_image run debug
 
 all: Utility BootLoader Kernel32 Kernel64 Disk.img
 
@@ -60,6 +79,15 @@ clean:
 	make -C 02.Kernel64 clean
 	make -C 04.Utility clean
 	rm -f Disk.img
-	
+
+create_image:
+	qemu-img create HDD.img 20M
+
 run:
-	qemu-system-x86_64 -m 64 -fda Disk.img -rtc base=localtime -M pc
+	qemu-system-x86_64 ${QEMU_OPTIONS}
+
+debug_run:
+	$(DEBUG_COMMAND) $(QEMU_OPTIONS) $(DEBUG_OPTIONS)
+
+
+

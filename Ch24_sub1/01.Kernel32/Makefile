@@ -1,6 +1,7 @@
 NASM32 = nasm
-GCC32 = gcc -m32 -c -ffreestanding -fno-pie
-LD32 = ld -T ../binary_i386.x -nostdlib
+GCC32 = gcc -m32 -ggdb -c -ffreestanding -fno-pie
+LD32 = ld -melf_i386 -T ../elf_i386.x -nostdlib
+OBJCOPY32 = objcopy -j .text -j .data -j .rodata -j .bss -S -O binary
 
 # All object files and intermediate binaries and Kernel32.bin will
 # be in Temp directory 
@@ -24,14 +25,14 @@ $(OBJECTDIRECTORY)/EntryPoint.bin: $(SOURCEDIRECTORY)/EntryPoint.s
 
 
 $(OBJECTDIRECTORY)/Kernel32_C.bin: ExecuteInternalBuild
-	mv $(OBJECTDIRECTORY)/Kernel32_C.internal.bin $@
+	$(OBJCOPY32) $(OBJECTDIRECTORY)/Kernel32_C.internal.elf $@
 
 # Let child process make Kernel32_C.bin
 ExecuteInternalBuild:
 	@echo ===    Make Dependency File    ===
 	make -C $(OBJECTDIRECTORY) -f ../Makefile InternalDependency
 	@echo === Dependency Search Complete ===
-	make -C $(OBJECTDIRECTORY) -f ../Makefile Kernel32_C.internal.bin
+	make -C $(OBJECTDIRECTORY) -f ../Makefile Kernel32_C.internal.elf
 
 ##########################################################
 # below code is related to making Kernel32_C.bin
@@ -64,9 +65,9 @@ COBJECTFILES = $(subst Main.o, , $(notdir $(patsubst %.c, %.o, $(CSOURCEFILES)))
 %.o: ../$(SOURCEDIRECTORY)/%.asm
 	$(NASM32) -f elf32 -o $@ $<
 
-Kernel32_C.internal.bin: $(CENTRYPOINTOBJECTFILE) $(COBJECTFILES) $(ASSEMBLYOBJECTFILES)
+Kernel32_C.internal.elf: $(CENTRYPOINTOBJECTFILE) $(COBJECTFILES) $(ASSEMBLYOBJECTFILES)
 	$(LD32) -o $@ $^
 
 clean:
 	rm -f *.bin
-	rm -rf $(OBJECTDIRECTORY)
+	rm -f $(OBJECTDIRECTORY)/*
