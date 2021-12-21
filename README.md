@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch24): PATA disk driver that reads first sector of hdd  
+## Current State (Ch24_sub1): debugging OS in QEMU and Visual Studio Code  
 
-![capture of MINT64OS in QEMU](Ch24/summary/assets/result1.JPG)
+![capture of MINT64OS in QEMU](Ch24_sub1/summary/assets/result1.jpg)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -48,6 +48,10 @@ problem
 
     * describe how to address general protection exception caused in original
     code
+
+11. [Ch24_sub1 in QEMU and VScode](https://youtu.be/K0cppNIreTI)
+
+    * describe how to use debugging feature in QEMU and VScode
 
 # To Do List
 
@@ -1040,3 +1044,32 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     6. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add hard disk related commands
+
+* Ch24_sub1
+
+    * describe how to use gdb (debugger) in vscode and qemu
+
+    * summaries
+
+        * [24_sub1-1.md](Ch24_sub1/summary/24_sub1-1.md)
+        
+    * [result image1](Ch24_sub1/summary/assets/result1.jpg)
+
+    1. Makefile in root directory
+
+        * add command for running qemu with gdb server
+
+    2. 01.Kernel32/Makefile, 02.Kernel32/Makefile
+
+        * compiler and linker generate object files and elf file that contains debuging symbols
+
+        * Makefile extract binary file from the elf file
+
+    3. 01.Kernel32/elf_i386.x, 02.Kernel64/elf_amd64.x
+
+        * A linker script that instructs the linker to generate an elf file with debugging
+        information. 
+
+    4. .vscode/launch.json
+
+        * add configuration for debugging in vscode IDE 
