@@ -303,6 +303,58 @@ static void kReadSector(const char *pcParameterBuffer);
 static void kWriteSector(const char *pcParameterBuffer);
 
 
+// mount primary slave hdd to file system
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kMountHDD does have any parameters
+static void kMountHDD(const char *pcParameterBuffer);
+
+
+// format primary slave hdd to the MINT filesystem
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kFormatHDD does have any parameters
+static void kFormatHDD(const char *pcParameterBuffer);
+
+
+// show file system information
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowFileSystemInformation does have any parameters
+static void kShowFileSystemInformation(const char *pcParameterBuffer);
+
+
+// create a empty file in root directory
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     filename: name of file to create
+//       limit: up to 23 chars is allowed
+static void kCreateFileInRootDirectory(const char *pcParameterBuffer);
+
+
+// delete file in root directory
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     filename: name of file to delete
+//       limit: up to 23 chars is allowed
+static void kDeleteFileInRootDirectory(const char *pcParameterBuffer);
+
+
+// list files in the root directory
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   kShowRootDirectory does have any parameters
+static void kShowRootDirectory(const char *pcParameterBuffer);
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable
