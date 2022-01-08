@@ -479,7 +479,7 @@ int kWriteHDDSector(
             return i;
         }
 
-        if (bStatus & HDD_STATUS_DATAREQUEST != HDD_STATUS_DATAREQUEST) {
+        if ((bStatus & HDD_STATUS_DATAREQUEST) != HDD_STATUS_DATAREQUEST) {
             bWaitResult = kWaitForHDDInterrupt(bPrimary);
             kSetHDDInterruptFlag(bPrimary, FALSE);
             if (!bWaitResult) {
