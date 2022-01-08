@@ -10,6 +10,7 @@
 #include "PIT.h"
 #include "DynamicMemory.h"
 #include "HardDisk.h"
+#include "FileSystem.h"
 
 
 void Main(void) {
@@ -120,6 +121,18 @@ void Main(void) {
         kPrintf("Fail\n");
     }
 
+    
+    /* initialize file system */
+
+    kPrintf("File System Initialize......................[    ]");
+    if (kInitializeFileSystem() == TRUE) {
+        kSetCursor(45, iCursorY++);
+        kPrintf("Pass\n");
+    }
+    else {
+        kSetCursor(45, iCursorY++);
+        kPrintf("Fail\n");
+    }
 
     /* create IDLE task */
 
