@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch24_sub1): debugging OS in QEMU and Visual Studio Code  
+## Current State (Ch25): Create files and list root directory 
 
-![capture of MINT64OS in QEMU](Ch24_sub1/summary/assets/result1.jpg)
+![capture of MINT64OS in QEMU](Ch25/summary/assets/result1.png)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -1073,3 +1073,27 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     4. .vscode/launch.json
 
         * add configuration for debugging in vscode IDE 
+
+* Ch25
+
+    * describe how to implement MINT filesystem
+
+    * describe how to create and delete a file in the filesystem
+
+    * summaries
+
+        * [25-1.md](Ch25/summary/25-1.md)
+        
+    * [result image1](Ch25/summary/assets/result1.png)
+
+    1. 02.Kernel/Filesystem.[c, h]
+
+        * Add code to mount IDE primary slave disk with MINT filesystem 
+
+    2. 02.Kernel64/Source/Main.c
+
+        * initialize file system
+
+    3. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add filesystem related commands
