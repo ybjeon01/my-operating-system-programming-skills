@@ -1806,7 +1806,7 @@ static void kShowFileSystemInformation(const char *pcParameterBuffer) {
     kGetFileSystemInformation(&stManager);
 
     kPrintf(
-        "=================== File System Information ==================="
+        "=================== File System Information ===================\n"
     );
     kPrintf(
         "Mounted:\t\t\t\t\t %d\n",
