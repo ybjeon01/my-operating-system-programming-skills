@@ -101,8 +101,11 @@ void Main(void) {
 
     kPrintf("PIC Controller And Interrupt Initialize.....[    ]");
     kInitializePIC();
-    // unmask all interrupts
-    kMaskPICInterrupt(0);
+    
+    // unmask all interrupts except HDD2 and NotUsed2 signals
+    // My acer laptop keep sending the two signals
+    // Ill keep this code before fixing the problem. 
+    kMaskPICInterrupt(0b1000100000000000);
     // interrupt was deactivated in 01.Kernel32/EntryPoint.s 
     kEnableInterrupt();
     kSetCursor(45, iCursorY++);
