@@ -69,7 +69,7 @@ void kMaskPICInterrupt(WORD wIRQBitMask) {
 
 	// set IMR to slave PIC
 	// OCW1 command, mask IRQ 8 ~ IRQ 15
-	kOutPortByte(PIC_MASTER_PORT2, (BYTE) ( wIRQBitMask >> 8 ));
+	kOutPortByte(PIC_SLAVE_PORT2, (BYTE) ( wIRQBitMask >> 8 ));
 }
 
 
