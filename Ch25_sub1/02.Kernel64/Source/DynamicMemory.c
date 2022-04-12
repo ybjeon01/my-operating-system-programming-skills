@@ -111,15 +111,16 @@ void kInitializeDynamicMemory(void) {
 // return:
 //   total size of dynamic memory area
 // info:
-//   currently, MINT64OS supports up to 3 GB
+//   currently, MINT64OS supports up to 2 GB
 static QWORD kCalculateDynamicMemorySize(void) {
     QWORD qwRAMSize;
 
-    // Because part of memory above 3GB is used for video memory
-    // current MINT64OS uses up to 3 GB for dynamic memory
+    // Because part of memory addresses above 3GB is used for video memory
+    // The available ram is not consecutive. So, until this split problem is
+    // resolved, only 2 GB will be available.
     qwRAMSize = (kGetTotalRAMSize() * 1024 * 1024);
-    if (qwRAMSize > (QWORD) 3 * 1024 * 1024 * 1024) {
-        qwRAMSize = (QWORD) 3 * 1024 * 1024 * 1024;
+    if (qwRAMSize > (QWORD) 2 * 1024 * 1024 * 1024) {
+        qwRAMSize = (QWORD) 2 * 1024 * 1024 * 1024;
     }
     return qwRAMSize - DYNAMICMEMORY_START_ADDRESS;
 }
