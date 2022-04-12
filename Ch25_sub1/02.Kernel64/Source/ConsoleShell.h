@@ -403,6 +403,17 @@ static void kReadHDDRegisters(const char *pcParameterBuffer);
 
 static void kWriteToHDDReg(const char *pcParameterBuffer);
 
+static void kSearchUSBControllers(const char *pcParameterBuffer);
+
+static void kPrintUSBDevInfo(
+    int iBus,
+    int iDev,
+    int iFunc,
+    DWORD dwBase,
+    BYTE bProgIF,
+    QWORD qwSize
+);
+
 #endif /*__CONSOLESHELL_H__*/
 
 

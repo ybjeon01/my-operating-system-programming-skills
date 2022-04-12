@@ -12,7 +12,7 @@
 #include "DynamicMemory.h"
 #include "HardDisk.h"
 #include "FileSystem.h"
-
+#include "PCI.h"
 
 SHELLCOMMANDENTRY gs_vstCommandTable[] = {
     {
@@ -203,6 +203,11 @@ SHELLCOMMANDENTRY gs_vstCommandTable[] = {
         "writeHDDReg",
         "write master or slave flag to HDD DriveHead register, ex) writeHDDReg slave(drive)",
         kWriteToHDDReg
+    },
+    {
+        "searchUSBControllers",
+        "print info of usb controllers in PCI bus",
+        kSearchUSBControllers
     },
 };
 
@@ -2306,5 +2311,101 @@ static void kWriteToHDDReg(const char *pcParameterBuffer) {
     kOutPortByte(
         wPortBase + HDD_PORT_INDEX_DRIVEANDHEAD,
         bDriveFlag
+    );
+}
+
+
+static void kSearchUSBControllers(const char *pcParameterBuffer)  {
+    int iBus;
+    int iDev;
+    int iFunc;
+
+    PCIHeader stHeader;
+    DWORD *pstHeader = (DWORD *) &stHeader;
+    int iUsbIdx;
+    DWORD dwBase;
+    QWORD qwSize;
+
+    for (iBus = 0; iBus < PCI_BUS_MAX; iBus++)
+    {
+        for (iDev = 0; iDev < PCI_DEV_MAX; iDev++)
+        {
+            for (iFunc = 0; iFunc < PCI_FUNC_MAX; iFunc++) 
+            {
+
+                /* read class, subclass, Prog IF and Revision ID*/
+
+                pstHeader[PCI_OFFSET_0x08 / 4] = kReadPCIDword(
+                    iBus,
+                    iDev,
+                    iFunc,
+                    PCI_OFFSET_0x08
+                );
+
+                // 0x0C: Serial Bus Controller
+                // 0x03: USB Controller
+                if (stHeader.bClass != 0x0C)
+                    continue;
+                if (stHeader.bSubclass != 0x03)
+                    continue;
+
+
+                /* read usb controller type */
+                
+                // 0x00: UHCI (USB 1.0)
+                // 0x10: OHCI (USB 1.0)
+                // 0x20: EHCI (USB 2.0)
+                // 0x30: XHCI (USB 3.0) 
+                iUsbIdx = (stHeader.bProgIF & 0xF0) >> 4;
+                if (iUsbIdx > 3)
+                    continue;
+                
+                
+                /* print usb host controller info */
+
+                // only UHCI uses BAR 4
+                if (iUsbIdx == 0) {
+                    dwBase =
+                        kGetPCIBaseAddress(iBus, iDev, iFunc, PCI_OFFSET_0x20);
+                    qwSize =
+                        kGetPCIMemorySize(iBus, iDev, iFunc, PCI_OFFSET_0x20);
+                }
+                else {
+                    dwBase =
+                        kGetPCIBaseAddress(iBus, iDev, iFunc, PCI_OFFSET_0x10);
+                    qwSize =
+                        kGetPCIMemorySize(iBus, iDev, iFunc, PCI_OFFSET_0x10);
+                }
+
+                kPrintUSBDevInfo(
+                    iBus,
+                    iDev,
+                    iFunc,
+                    dwBase,
+                    stHeader.bProgIF & 0xF0,
+                    qwSize
+                );
+            }   
+        }
+    }
+}
+
+
+static void kPrintUSBDevInfo(
+    int iBus,
+    int iDev,
+    int iFunc,
+    DWORD dwBase,
+    BYTE bProgIF,
+    QWORD qwSize
+) {
+    kPrintf(" Found a USB host controller: 0x%X\n", bProgIF);
+    kPrintf(
+        " Bus = %d, device = %d, function = %d, Base: 0x%Q, size = 0x%Q\n",
+        iBus,
+        iDev,
+        iFunc,
+        dwBase,
+        qwSize
     );
 }
