@@ -4,6 +4,7 @@ SECTION .text
 
 ; I/O port related functions
 global kInPortByte, kOutPortByte, kInPortWord, kOutPortWord
+global kInPortDword, kOutPortDword
 
 ; GDT, IDT, and TSS related functions
 global kLoadGDTR, kLoadTR, kLoadIDTR
@@ -91,6 +92,40 @@ kOutPortWord:
     mov rdx, rdi ; move first parameter (port addr) to rdi
     mov rax, rsi ; move second parameter (data) to rax
     out dx, ax   ; write byte
+
+    pop rax
+    pop rdx
+    ret
+
+
+; function that reads four bytes from port
+; this function follows IA-32e mode function convention
+; param:
+;   port address (dword): memory address where data is stored
+; return:
+;   four bytes value from the port I/O address
+kInPortDword:
+    push rdx
+    mov rax, 0	 ; initialize register to zero
+    mov rdx, rdi ; move first parameter (port addr) to rax
+    in eax, dx    ; read 4 byte
+
+    pop rdx
+    ret
+
+
+; function that writes four bytes to port
+; this function follows IA-32e mode function convention
+; param:
+;   port address (dword): I/O port address to write data
+;   data (dword): data to write
+kOutPortDword:
+    push rdx
+    push rax
+
+    mov rdx, rdi ; move first parameter (port addr) to rdi
+    mov rax, rsi ; move second parameter (data) to rax
+    out dx, eax   ; write four byte
 
     pop rax
     pop rdx

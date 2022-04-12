@@ -27,11 +27,27 @@ void kOutPortByte(WORD wPort, BYTE bData);
 //   two bytes value from the port I/O address
 WORD kInPortWord(WORD wPort);
 
+
 // function that writes two bytes to port
 // param:
 //   port address (word): I/O port address to write data
 //   data (word): data to write
 void kOutPortWord(WORD wPort, WORD wData);
+
+
+// function that reads four bytes from port
+// param:
+//   port address (word): memory address where data is stored
+// return:
+//   four bytes value from the port I/O address
+DWORD kInPortDword(WORD wPort);
+
+
+// function that writes four bytes to port
+// param:
+//   port address (word): I/O port address to write data
+//   data (dword): data to write
+void kOutPortDword(WORD wPort, DWORD dwData);
 
 
 /* GDT, IDT, and TSS related functions */
