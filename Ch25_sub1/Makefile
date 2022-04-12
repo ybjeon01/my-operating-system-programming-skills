@@ -6,7 +6,7 @@
 #    possible values: [32, 64]
 #    default: 64
 
-QEMU_OPTIONS = -m 64 -hda ./Disk.img -hdb ./HDD.img -rtc base=localtime -M pc
+QEMU_OPTIONS = -m 8192 -hda ./Disk.img -hdb ./HDD.img -rtc base=localtime -M pc -device qemu-xhci -usb
 
 DEBUG_ARCH ?= 64
 DEBUG_COMMAND = qemu-system-x86_64
