@@ -10,7 +10,7 @@
             "request": "launch",
             "cwd": ".",
             // "program": "${workspaceFolder}/Ch15/01.Kernel32/Temp/Kernel32_C.internal.elf",
-            "program": "${workspaceFolder}/Ch25/02.Kernel64/Temp/Kernel64_C.elf",
+            "program": "${workspaceFolder}/Ch25_sub1/02.Kernel64/Temp/Kernel64_C.elf",
             "stopAtEntry": true,
             "miDebuggerServerAddress": "localhost:1234",
             "MIMode": "gdb",
