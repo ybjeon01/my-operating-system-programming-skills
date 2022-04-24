@@ -240,6 +240,7 @@
         "task.h": "c",
         "list.h": "c",
         "synchronization.h": "c",
-        "dynamicmemory.h": "c"
+        "dynamicmemory.h": "c",
+        "type_traits": "c"
     }
 }
