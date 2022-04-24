@@ -6,9 +6,9 @@
 
 ![capture of MINT64OS in real computer](Ch15_sub1/summary/assets/result6.jpg)
 
-## Current State (Ch25): Create files and list root directory 
+## Current State (Ch25_sub1): read PCI devices installed in the computer. 
 
-![capture of MINT64OS in QEMU](Ch25/summary/assets/result1.png)
+![capture of MINT64OS in QEMU](Ch25_sub1/summary/assets/result1.png)
 
 This repository is for studying how operating system works. You can find my
 summary note in markdown format and source code. From the first chapter to the
@@ -1097,3 +1097,25 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     3. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add filesystem related commands
+
+* Ch25_sub1
+
+    * implement a simple PCI driver that reads and writes to PCI configuration
+    space before implementing USB host controller driver
+
+    * summaries
+    
+        * [25_sub1-1.md](Ch25_sub1/summary/25_sub1-1.md)
+
+    * [result image1](Ch25_sub1/summary/assets/result1.png)
+    * [result image2 in real PC](Ch25_sub1/summary/assets/result2.JPEG)
+
+    1. 02.Kernel64/Source/PCI.[c, h]
+
+        * add functions to read and write PCI configuration space
+
+        * add functions to read which memory addresses are used by PCI devices
+
+    2. 02.Kernel64/Source/ConsoleShell.[h, c]
+
+        * add command to find USB host controllers installed in the computer.
