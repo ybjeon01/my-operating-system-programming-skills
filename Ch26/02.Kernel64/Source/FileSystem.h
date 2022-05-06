@@ -198,13 +198,16 @@ BOOL kMount(void);
 BOOL kGetHDDInformation(HDDINFORMATION *pstInformation);
 
 
+/* low level functions */
+
+
 // Read a sector at an offset in the cluster link table
 // params:
 //   dwOffset: Offset to read from cluster link table
 //   pbBuffer: A pointer to a variable that will hold the data
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
+static BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
 
 
 // Write a sector at an offset in the cluster link table
@@ -213,7 +216,7 @@ BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
 //   pbBuffer: A pointer to a variable that will be written to link area
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
+static BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
 
 
 // Read one cluster to the offset of the data area
@@ -222,7 +225,7 @@ BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer);
 //   pbBuffer: A pointer to a variable that will hold the data
 // return:
 //   TRUE on success, and FALSE on failure
-BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer);
+static BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer);
 
 
 // Write one cluster to the offset of the data area
@@ -231,13 +234,13 @@ BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer);
 //   pbBuffer: A pointer to a variable that will be written to data area
 // return:
 //   TRUE on success, and FALSE on failure
-BOOL kWriteCluster(DWORD dwOffset, BYTE *pbBuffer);
+static BOOL kWriteCluster(DWORD dwOffset, BYTE *pbBuffer);
 
 
 // Search for an empty cluster in the Cluster Links table area
 // return:
 //   index to empty cluster in data area
-DWORD kFindFreeCluster(void);
+static DWORD kFindFreeCluster(void);
 
 
 // set value in cluster link corresponding to a cluster index
@@ -246,7 +249,7 @@ DWORD kFindFreeCluster(void);
 //   dwData: 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData);
+static BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData);
 
 
 // get value in cluster link corresponding to a cluster index
@@ -255,14 +258,14 @@ BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData);
 //   pdwData: a pointer to a varaible that will contain the link data 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD *pdwData);
+static BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD *pdwData);
 
 
 // get idex to empty entry in root directory
 // return:
 //   index to free entry in root directory
 //   -1 on failure
-int kFindFreeDirectoryEntry(void);
+static int kFindFreeDirectoryEntry(void);
 
 
 // write directory entry to index of root directory
@@ -271,7 +274,7 @@ int kFindFreeDirectoryEntry(void);
 //   pstEntry: pointer containing data to write to straoge
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
+static BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
 
 
 // read directory entry at index of root directory
@@ -280,7 +283,7 @@ BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
 //   pstEntry: pointer that will contain the data 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
+static BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
 
 
 // find an entry in the root directory with a matching file name
@@ -290,7 +293,10 @@ BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry);
 // return:
 //   index of found entry in root directory
 //   or -1 on failure 
-int kFindDirectoryEntry(const char *pcFileName, DIRECTORYENTRY *pstEntry);
+static int kFindDirectoryEntry(
+    const char *pcFileName,
+    DIRECTORYENTRY *pstEntry
+);
 
 
 // copy global file manager to pstManager

@@ -3,6 +3,7 @@
 #include "DynamicMemory.h"
 #include "Utility.h"
 
+
 // MINT64OS filesystem manager 
 static FILESYSTEMMANAGER gs_stFileSystemManager;
 
@@ -245,7 +246,7 @@ BOOL kGetHDDInformation(HDDINFORMATION *pstInformation) {
 //   pbBuffer: A pointer to a variable that will hold the data
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
+static BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
     return gs_fpReadHDDSector(
         TRUE,
         FALSE,
@@ -262,7 +263,7 @@ BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
 //   pbBuffer: A pointer to a variable that will be written to link area
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
+static BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
     return gs_pfWriteHDDSector(
         TRUE,
         FALSE,
@@ -279,7 +280,7 @@ BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE *pbBuffer) {
 //   pbBuffer: A pointer to a variable that will hold the data
 // return:
 //   TRUE on success, and FALSE on failure
-BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer) {
+static BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer) {
     return gs_fpReadHDDSector(
         TRUE,
         FALSE,
@@ -297,7 +298,7 @@ BOOL kReadCluster(DWORD dwOffset, BYTE *pbBuffer) {
 //   pbBuffer: A pointer to a variable that will be written to data area
 // return:
 //   TRUE on success, and FALSE on failure
-BOOL kWriteCluster(DWORD dwOffset, BYTE *pbBuffer) {
+static BOOL kWriteCluster(DWORD dwOffset, BYTE *pbBuffer) {
     return gs_pfWriteHDDSector(
         TRUE,
         FALSE,
@@ -312,7 +313,7 @@ BOOL kWriteCluster(DWORD dwOffset, BYTE *pbBuffer) {
 // Search for an empty cluster in the Cluster Links table area
 // return:
 //   index to empty cluster in data area
-DWORD kFindFreeCluster(void) {
+static DWORD kFindFreeCluster(void) {
     DWORD dwLinkCountInSector;
     DWORD dwLastSectorOffset;
     DWORD dwCurrentSectorOffset;
@@ -396,7 +397,7 @@ DWORD kFindFreeCluster(void) {
 //   dwData: 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData) {
+static BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData) {
     DWORD dwSectorOffset;
 
     // check if filesystem is mounted;
@@ -438,7 +439,7 @@ BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData) {
 //   pdwData: a pointer to a varaible that will contain the link data 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD *pdwData) {
+static BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD *pdwData) {
     DWORD dwSectorOffset;
 
     // check if filesystem is mounted;
@@ -471,7 +472,7 @@ BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD *pdwData) {
 // return:
 //   index to free entry in root directory
 //   -1 on failure
-int kFindFreeDirectoryEntry(void) {
+static int kFindFreeDirectoryEntry(void) {
     DIRECTORYENTRY *pstEntry;
     int i;
 
@@ -506,7 +507,7 @@ int kFindFreeDirectoryEntry(void) {
 //   pstEntry: pointer containing data to write to straoge
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
+static BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
     DIRECTORYENTRY *pstRootEntry;
 
     // check if filesystem is mounted;
@@ -549,7 +550,7 @@ BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
 //   pstEntry: pointer that will contain the data 
 // return:
 //   TRUE on success, FALSE on failure
-BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
+static BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
     DIRECTORYENTRY *pstRootEntry;
 
     // check if filesystem is mounted;
@@ -583,7 +584,10 @@ BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY *pstEntry) {
 // return:
 //   index of found entry in root directory
 //   or -1 on failure 
-int kFindDirectoryEntry(const char *pcFileName, DIRECTORYENTRY *pstEntry) {
+static int kFindDirectoryEntry(
+    const char *pcFileName,
+    DIRECTORYENTRY *pstEntry
+) {
     DIRECTORYENTRY *pstRootEntry;
     int i;
     int iLength;
