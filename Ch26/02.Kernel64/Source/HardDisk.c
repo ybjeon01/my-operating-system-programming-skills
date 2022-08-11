@@ -10,6 +10,8 @@ static HDDMANAGER gs_stHDDManager;
 // initialize hdd controller to ATA PIO MODE
 // return:
 //   True on success, False on failure (disk not exist)
+// notes:
+//   OS must be in the primary master disk
 BOOL kInitializeHDD(void) {
     
     kInitializeMutex(&gs_stHDDManager.stMutex);
@@ -22,19 +24,24 @@ BOOL kInitializeHDD(void) {
     kOutPortByte(HDD_PORT_SECONDARYBASE + HDD_PORT_INDEX_DIGITALOUTPUT, 0);
 
     // if disk does not exist
-    if (!kReadHDDInformation(TRUE, TRUE, &(gs_stHDDManager.stHDDInformation))) {
+    if (!kReadHDDInformation(TRUE, TRUE, &(gs_stHDDManager.stHDDInformation0))) {
         gs_stHDDManager.bHDDDetected = FALSE;
         gs_stHDDManager.bCanWrite = FALSE;
-
         return FALSE;
     }
+
+    /* get extra disk info */
+
+    kReadHDDInformation(TRUE, FALSE, &(gs_stHDDManager.stHDDInformation1));
+    // kReadHDDInformation(FALSE, TRUE, &(gs_stHDDManager.stHDDInformation2));
+    // kReadHDDInformation(FALSE, FALSE, &(gs_stHDDManager.stHDDInformation3));
     
     gs_stHDDManager.bHDDDetected = TRUE;
     
     // when disk is QEMU disk
     if (
         kMemCmp(
-            gs_stHDDManager.stHDDInformation.vwModelNumber,
+            gs_stHDDManager.stHDDInformation0.vwModelNumber,
             "QEMU",
             4
         ) == 0
@@ -262,6 +269,7 @@ int kReadHDDSector(
     int iSectorCount,
     char *pcBuffer
 ) {
+    int sectorDest;
     WORD wPortBase;
     int i, j;
     BYTE bDriveFlag;
@@ -272,15 +280,32 @@ int kReadHDDSector(
 
     /* check if parameters are valid */
 
+    sectorDest = dwLBA + iSectorCount;
+
     if (
         (gs_stHDDManager.bHDDDetected == FALSE) ||
-        (iSectorCount <= 0) || (256 < iSectorCount) ||
-        (
-            (dwLBA + iSectorCount) >= 
-            gs_stHDDManager.stHDDInformation.dwTotalSectors
-        )
+        (iSectorCount <= 0) || (256 < iSectorCount)
     ) {
         return 0;
+    }
+
+    /* check if disk has enough area to write */
+
+    if (bPrimary && bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation0.dwTotalSectors)
+            return 0;
+    }
+    else if (bPrimary && !bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation1.dwTotalSectors)
+            return 0;
+    }
+    else if (!bPrimary && bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation2.dwTotalSectors)
+            return 0;
+    }
+    else {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation3.dwTotalSectors)
+            return 0;
     }
 
 
@@ -346,9 +371,13 @@ int kReadHDDSector(
             kSetHDDInterruptFlag(bPrimary, FALSE);
 
             if (bWaitResult == FALSE) {
-                kPrintf("HardDisk: Interrupt not occurred\n");
-                kUnlock(&(gs_stHDDManager.stMutex));
-                return i;
+                continue;
+                
+                // note: reading hdd disk really fast sometimes causes error
+
+                // kPrintf("HardDisk: Interrupt not occurred\n");
+                // kUnlock(&(gs_stHDDManager.stMutex));
+                // return i;
             }
         }
 
@@ -381,6 +410,8 @@ int kWriteHDDSector(
     int iSectorCount,
     char *pcBuffer
 ) {
+
+    int sectorDest;
     WORD wPortBase;
     WORD wTemp;
     int i, j;
@@ -389,16 +420,34 @@ int kWriteHDDSector(
     long lWriteCount = 0;
     BOOL bWaitResult;
 
-
+    // ERROR: dwTotalSectors contains only number of sectors of primary master 
     if (
         (gs_stHDDManager.bHDDDetected == FALSE) ||
-        (iSectorCount <= 0) || (256 <iSectorCount) ||
-        (
-            (dwLBA + iSectorCount) >= 
-            gs_stHDDManager.stHDDInformation.dwTotalSectors
-        )
+        (iSectorCount <= 0) || (256 < iSectorCount)
     ) {
         return 0;
+    }
+
+
+    /* check if disk has enough area to write */
+
+    sectorDest = dwLBA + iSectorCount;
+
+    if (bPrimary && bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation0.dwTotalSectors)
+            return 0;
+    }
+    else if (bPrimary && !bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation1.dwTotalSectors)
+            return 0;
+    }
+    else if (!bPrimary && bMaster) {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation2.dwTotalSectors)
+            return 0;
+    }
+    else {
+        if (sectorDest >= gs_stHDDManager.stHDDInformation3.dwTotalSectors)
+            return 0;
     }
 
 
@@ -480,7 +529,13 @@ int kWriteHDDSector(
         }
 
         if ((bStatus & HDD_STATUS_DATAREQUEST) != HDD_STATUS_DATAREQUEST) {
+            
             bWaitResult = kWaitForHDDInterrupt(bPrimary);
+            // debug
+            // when j = 256, something wrong happens
+            while (!bWaitResult)
+                bWaitResult = kWaitForHDDInterrupt(bPrimary);
+
             kSetHDDInterruptFlag(bPrimary, FALSE);
             if (!bWaitResult) {
                 kUnlock(&(gs_stHDDManager.stMutex));

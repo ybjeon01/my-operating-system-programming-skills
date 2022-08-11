@@ -5,6 +5,7 @@
 #include "Types.h"
 #include "Synchronization.h"
 #include "HardDisk.h"
+#include "Task.h"
 
 
 // This macros contain information related to Mint FileSystem header and cluters
@@ -38,6 +39,52 @@
 
 // Maximum length of file name: 24 characters
 #define FILESYSTEM_MAXFILENAMELENGTH        24
+
+// Maximum number of dir and file handlers in a pool
+#define FILESYSTEM_HANDLE_MAXCOUNT          (TASK_MAXCOUNT * 3) 
+
+
+// types of handlers
+
+#define FILESYSTEM_TYPE_FREE                0
+#define FILESYSTEM_TYPE_FILE                1
+#define FILESYSTEM_TYPE_DIRECTORY           2
+
+
+// SEEK options
+
+#define FILESYSTEM_SEEK_SET                 0
+#define FILESYSTEM_SEEK_CUR                 1
+#define FILESYSTEM_SEEK_END                 2
+
+
+
+// overide MINT file system function names with stdio function names
+
+#define fopen                               kOpenFile
+#define fread                               kReadFile
+#define fwrite                              kWriteFile
+#define fseek                               kSeekFile
+#define fclose                              kCloseFile
+#define remove                              kRemoveFile
+#define opendir                             kOpenDirectory
+#define readdir                             kReadDirectory
+#define rewinddir                           kRewindDirectory
+#define closedir                            kCloseDirectory
+
+
+// overide MINT file system macro names with stdio macro names
+
+#define SEEK_SET                            FILESYSTEM_SEEK_SET
+#define SEEK_CUR                            FILESYSTEM_SEEK_CUR
+#define SEEK_END                            FILESYSTEM_SEEK_END
+
+
+// override MINT file system types with stdio types
+
+#define size_t                              DWORD
+#define dirent                              DIRECTORYENTRY
+#define d_name                              vcFileName
 
 
 // function pointer types related to hard disk control 
@@ -121,6 +168,7 @@ typedef struct kMBRStruct {
     BYTE vbBootLoaderSignature[2];
 } MBR;
 
+
 // data structure for directory entries
 typedef struct kDirectoryEntryStruct {
     // file name
@@ -132,6 +180,48 @@ typedef struct kDirectoryEntryStruct {
     // the cluster index where the file begins
     DWORD dwStartClusterIndex;
 } DIRECTORYENTRY;
+
+
+// File handler structure that manages a file
+typedef struct kFileHandleStruct {
+    // Offset of the directory entry where the file exists
+    int iDirectoryEntryOffset;
+    // actual size of the file
+    DWORD dwFileSize;
+    // The cluster index where the file starts
+    DWORD dwStartClusterIndex;
+
+
+    // The index of the cluster that is currently performing I/O
+    DWORD dwCurrentClusterIndex;
+    // The index of the cluster immediately preceding the current cluster
+    DWORD dwPreviousClusterIndex;
+    // Current position of the file pointer
+    DWORD dwCurrentOffset;
+} FILEHANDLE;
+
+
+// Directory handlerstructure that manages a directory
+typedef struct kDirectoryHandleStruct {
+    // buffer that contains root directory entries (cluster 0 of data area)
+    DIRECTORYENTRY *pstDirectoryBuffer;
+
+    
+    // Current position of the directory pointer
+    int iCurrentOffset;
+} DIRECTORYHANDLE;
+
+
+// File and Dir data structure that is exposed to user
+typedef struct kFileDirectoryHandleStruct {
+    // type of the handle: file, dir, or free
+    BYTE bType;
+    
+    union {
+        FILEHANDLE stFileHandle;
+        DIRECTORYHANDLE stDirectoryHandle;
+    };
+} FILE, DIR;
 
 
 // Structure that manages the file system
@@ -157,6 +247,9 @@ typedef struct kFileSystemManagerStruct {
 
     // file system synchronization object
     MUTEX stMutex;
+
+    // file/directory handle pool
+    FILE *pstHandlePool;
 
 } FILESYSTEMMANAGER;
 
@@ -305,5 +398,203 @@ static int kFindDirectoryEntry(
 //               info
 void kGetFileSystemInformation(FILESYSTEMMANAGER *pstManager);
 
+
+/* high level functions */
+
+
+// open a FILE handle
+// params:
+//   pcFileName: name of a file to open
+//   pcMode: mode of the file to open
+//           r  : read only
+//           w  : write only
+//           a  : append
+//           r+ : read only + extension (write)
+//           w+ : write only + extension (read)
+//           a+ : append + extension (read)
+// return:
+//   pointer to a FILE on success
+//   null on failure
+// note:
+//   this is implmenetation of stdio functions.
+FILE *kOpenFile(const char *pcFileName, const char *pcMode);
+
+
+// read content in a file
+// params:
+//   pvBuffer: pointer to buffer to save the content
+//   dwSize: size of data to read at once
+//   dwCount: number of data to read
+//   pstFile: file handle to read
+// return:
+//   dwCount * dwSize on success
+//   number of data that was read on partial success
+//   negative numbers on failure
+DWORD kReadFile(void *pvBuffer, DWORD dwSize, DWORD dwCount, FILE *pstFile);
+
+
+// write data in buffer to the file in storage.
+// params:
+//   pvBuffer: pointer to a buffer that will be written to storage
+//   dwSize: size of data to write at once
+//   dwCount: number of data to write
+//   pstFIle: file handle to write
+// return:
+//   -1 on failure
+//   dwCount * dwSize on success
+//   number of data that was written on partial success
+DWORD kWriteFile(
+    const void *pvBuffer,
+    DWORD dwSize,
+    DWORD dwCount,
+    FILE *pstFile
+);
+
+
+// Set the current pointer of a file to the desired location
+// params:
+//   pstFile: pointer to FILE data structure that will be modified
+//   iOffset: offset count from iOrigin
+//   iOrigin: reference position to move the file pointer
+// return:
+//   0 on success
+//   -1 on failure
+// note:
+//  For iOrigin, there are three options
+//    FILESYSTEM_SEEK_SET: move pointer from the start of the file
+//    FILESYSTEM_SEEK_CUR: move pointer from the current of the file
+//    FILESYSTEM_SEEK_END: move pointer from the end of the file
+int kSeekFile(FILE *pstFile, int iOffset, int iOrigin);
+
+
+// Close a open file
+// params:
+//   pstFile: pointer to a opened file to close
+// return:
+//   0 on success
+//   -1 on failure (when pstFile is not valid)
+int kCloseFile(FILE *pstFile);
+
+
+// Remove a file from root directory
+// params:
+//   pcFileName: string of a file to delete
+// return:
+//   0 on Success
+//   -1 on Failure
+// notes:
+//   this function does not wipe data of a file in the storage. Instead,
+//   unlink all clusters in the link area.
+int kRemoveFile(const char *pcFileName);
+
+
+// Open a directory named pcDirectoryName
+// params:
+//   pcDirectoryName: name of a directory to open
+// return:
+//   NULL on failure
+//   pointer to a directory handle on success
+// notes:
+//   In MINT64OS, only root directory is supported, so whatever directory name
+//   is given, root directory will be opened.
+DIR *kOpenDirectory(const char *pcDirectoryName);
+
+
+// Iterate to the next directory entry in the pstDirectory
+// params:
+//   pstDirectory: point to a directory data structure to iterate
+// return:
+//   NULL on failure
+//   NULL if there is no more dir entry to iterate
+//   dir entry if there is dir entry to iterate
+DIRECTORYENTRY *kReadDirectory(DIR *pstDirectory);
+
+
+// set the current offset of pstDirectory to 0, so it points to the first
+// directory entry.
+// params:
+//   pstDirectory: point to a directory data structure to rewind
+// notes:
+//   if pstDirectory is invalid data structure or NULL, nothing occurs
+void kRewindDirectory(DIR *pstDirectory);
+
+
+// Close a opened directory data structure
+// params:
+//   pstDirectory: pointer to a directory data structure to close
+// return:
+//  0 on success
+// -1 on failure
+int kCloseDirectory(DIR *pstDirectory);
+
+
+// Writes 0 as many as dwCount to file
+// params:
+//   pstFile: file data structure that 0 will be written
+//   dwCount: number of 0 to write
+// return:
+//   TRUE on success
+//   FALSE on failure
+// note:
+//    partial writing also return false
+BOOL kWriteZero(FILE *pstFile, DWORD dwCount);
+
+
+// Check whether an entry (file) in directory is open or not
+// params:
+//   pstEntry: entry of a directory to check
+// return:
+//   TRUE on success
+//   FALSE on failure
+// note:
+//   Opened files are not managed in efficient way, so this function is not
+//   efficient.
+BOOL kIsFileOpened(const DIRECTORYENTRY *pstEntry);
+
+
+// get a free handle from file/dir handle pool
+// return:
+//   on success, pointer to a avaiable FILE handle.
+//   on failure, NULL (pool has no available handles)
+static void *kAllocateFileDirectoryHandle();
+
+
+// free a used handle
+// note:
+//   pstFile must be a valid file handle. Otherwise, unexpected behavior occurs
+static void kFreeFileDirectoryHandle(FILE *pstFile);
+
+
+// create a file and fill it to root directory entry.
+// params:
+//   pcFileName: name of a file to create
+//   pstEntry: pointer to a directory entry that will have the file info
+//   piDirectoryEntryIndex: index of the entry in the root directory
+// return:
+//   TRUE on success
+//   FALSE on failure
+static BOOL kCreateFile(
+    const char *pcFileName,
+    DIRECTORYENTRY *pstEntry,
+    int *piDirectoryEntryIndex
+);
+
+
+// free all connected clusters from the given cluster index
+// params:
+//   dwClusterIndex: start index of a cluster to free
+// return:
+//   TRUE on success
+//   FALSE on failure 
+static BOOL kFreeClusterUntilEnd(DWORD dwClusterIndex);
+
+
+// flush meta data in FILE handle in memory to directory entry in storage
+// params:
+//   pstFileHandle: file handle
+// return:
+//   TRUE on success
+//   FALSE on failure 
+static BOOL kUpdateDirectoryEntry(FILEHANDLE *pstFileHandle);
 
 #endif /* __FILESYSTEM_H__ */

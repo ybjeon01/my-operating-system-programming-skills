@@ -355,6 +355,33 @@ static void kDeleteFileInRootDirectory(const char *pcParameterBuffer);
 static void kShowRootDirectory(const char *pcParameterBuffer);
 
 
+// write input from user to a file until three enter keys are pressed in a row
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     filename: name of file to delete
+// notes:
+//   file is opened with 'w', so the file contents are always erased.
+static void kWriteDataToFile(const char *pcParameterBuffer);
+
+
+// read a file and print all contents in it
+// params:
+//   pcCommandBuffer: parameters passed to command by shell
+// info:
+//   params:
+//     filename: name of file to delete
+// notes:
+//   file is opened with 'r', and read the file byte at a time.
+static void kReadDataFromFile(const char *pcParameterBuffer);
+
+
+
+static void kTestFileIO(const char *pcParameterBuffer);
+
+
+
 /* custom shell commands */
 
 // check if memory at specific address is readable and writable

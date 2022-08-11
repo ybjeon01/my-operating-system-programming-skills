@@ -61,7 +61,7 @@
 /* MISC macros */
 
 // time to wait for harddisk response (millisecond)
-#define HDD_WAITTIME        500
+#define HDD_WAITTIME        700
 
 // maximum number of sectors to read or write
 #define HDD_MAXBULKSECTORCOUNT  256
@@ -132,7 +132,14 @@ typedef struct kHDDMamagerStruct {
     // sync object for one process to access hdd at time
     MUTEX stMutex;
 
-    HDDINFORMATION stHDDInformation;
+    // primary master
+    HDDINFORMATION stHDDInformation0;
+    // primary slave
+    HDDINFORMATION stHDDInformation1;
+    // secondary master
+    HDDINFORMATION stHDDInformation2;
+    // secondary slave
+    HDDINFORMATION stHDDInformation3;
 } HDDMANAGER;
 
 

@@ -6,6 +6,10 @@
 #include "Types.h"
 
 
+#define MIN(x, y)   (((x) < (y)) ? (x) : (y))
+#define MAX(x, y)   (((x) > (y)) ? (x) : (y))
+
+
 /* memory related structures and functions */
 
 // entry of memory mapping returned by E820 bios service
