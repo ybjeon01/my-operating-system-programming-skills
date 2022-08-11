@@ -1119,3 +1119,14 @@ sudo dd if=./Disk.img of=/dev/[your usb or hdd]
     2. 02.Kernel64/Source/ConsoleShell.[h, c]
 
         * add command to find USB host controllers installed in the computer.
+
+* Ch26
+
+    * implement the stdio function.
+
+    * found a serious problem with the hdd driver, but failed to fix the
+    problems. In the next chapter, hdd driver will be replaced with ram disk.
+
+    * summaries
+
+        * [26-1.md](Ch26/summary/26-1.md)

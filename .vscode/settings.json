@@ -241,6 +241,7 @@
         "list.h": "c",
         "synchronization.h": "c",
         "dynamicmemory.h": "c",
-        "type_traits": "c"
+        "type_traits": "c",
+        "harddisk.h": "c"
     }
 }
